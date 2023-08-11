@@ -1,26 +1,21 @@
 use std::io::{self, Write};
 
-#[derive(Debug)]
+mod operator;
+use operator::Operator;
+mod kr;
+
 struct Name {
     text: Vec<u8>,
 }
 
-#[derive(Debug)]
-struct Operator {
-    text: Vec<u8>,
-}
-
-#[derive(Debug)]
 struct Space {
     text: Vec<u8>,
 }
 
-#[derive(Debug)]
 struct Number {
     text: Vec<u8>,
 }
 
-#[derive(Debug)]
 enum Token {
     Name(Name),
     Operator(Operator),
@@ -40,7 +35,7 @@ impl Token {
     fn as_string(&self) -> String {
         let t = match self {
             Token::Name(Name { text }) => { text },
-            Token::Operator(Operator { text }) => { text },
+            Token::Operator(Operator { text, dyadic }) => { text },
             Token::Number(Number { text }) => { text },
             Token::Space(Space { text }) => { text },
         };
@@ -75,6 +70,8 @@ fn tokenize(input: &String) -> Vec<Token> {
     let mut i = 0; // Index
     let input = input.as_bytes().to_owned();
     while i < input.len() {
+        // Determine what type of token by looking at next character
+        // Then possibly look ahead to find end of current token
         let c  = input[i];
         i = match c {
             b'a'..=b'z' | b'A'..=b'Z' => {
@@ -92,7 +89,7 @@ fn tokenize(input: &String) -> Vec<Token> {
             b'+' | b'-' | b'*' | b'/' => {
                 // Operator - push now
                 let j = i + 1;
-                tokens.push(Token::Operator(Operator { text: input[i..j].to_vec() }));
+                tokens.push(Token::Operator(Operator::new(input[i..j].to_vec(), operator::kr_add)));
                 j
             },
             b' ' => {
