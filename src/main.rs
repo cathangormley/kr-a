@@ -36,7 +36,19 @@ impl Token {
             Token::Space(_) => " ".to_string(),
             Token::Number(_) => ('0'..='9').collect::<String>(),
         }
-    } 
+    }
+    fn as_string(&self) -> String {
+        let t = match self {
+            Token::Name(Name { text }) => { text },
+            Token::Operator(Operator { text }) => { text },
+            Token::Number(Number { text }) => { text },
+            Token::Space(Space { text }) => { text },
+        };
+        match std::str::from_utf8(t) {
+            Ok(s) => s.to_string(),  // Conversion successful
+            Err(_) => String::new(),       // Invalid UTF-8, return an empty string
+        }
+    }
 }
 
 fn read() -> String {
@@ -111,7 +123,8 @@ fn main() {
         io::stdout().flush().expect("Failed to flush stdout");
         let input = read();
         let tokens = tokenize(&input);
-        println!("{:?}", tokens);
+        let token_strings: Vec<String> = tokens.iter().map(|x| x.as_string()).collect();
+        println!("{:?}", token_strings);
         let res = print(&input);
         if res == 0 { break; };
     }
