@@ -1,20 +1,24 @@
-use std::{io::{self, Write}, collections::HashMap};
+use std::io::{self, Write};
 
 mod operator;
-use kr::Kr;
 use operator::Operator;
+
 mod kr;
+use kr::Kr;
+
+mod init;
+use crate::init::Env;
 
 #[derive(Eq, Hash, PartialEq)]
-struct Name {
+pub struct Name {
     text: Vec<u8>,
 }
 
-struct Space {
+pub struct Space {
     text: Vec<u8>,
 }
 
-struct Number {
+pub struct Number {
     text: Vec<u8>,
     value: Kr,
 }
@@ -28,7 +32,7 @@ impl Number {
         Number { text: t, value: Kr::J(v)}
     }
 }
-enum Token {
+pub enum Token {
     Name(Name),
     Operator(Operator),
     Space(Space),
@@ -53,9 +57,9 @@ impl Token {
         };
         ascii_to_string(t)
     }
-    fn to_kr(&self, env: &HashMap<Name, Kr> ) -> Kr {
+    fn to_kr(&self) -> Kr {
         match self {
-            Token::Name(n) => {env.get(n).unwrap_or(&Kr::J(0)).clone()},
+            Token::Name(n) => { Kr::Cv(n.text.clone()) }
             Token::Operator(op) => { Kr::Op(op.clone())},
             Token::Number(num) => {num.value.clone()}
             _ => {Kr::J(0)}
@@ -71,6 +75,8 @@ fn ascii_to_string(input: &Vec<u8>) -> String {
 }
 
 fn read() -> String {
+    print!("kr>");
+    io::stdout().flush().expect("Failed to flush stdout");
     let mut input = String::new();
     let _res = io::stdin().read_line(&mut input).expect("Failed to read line");
     input
@@ -110,7 +116,7 @@ fn tokenize(input: &String) -> Vec<Token> {
                 tokens.push(Token::Number(Number::new(input[i..j].to_vec())));
                 j
             },
-            b'+' | b'-' | b'*' | b'/' => {
+            b'+' | b'-' | b'*' | b'%' | b':' => {
                 // Operator - push now
                 let j = i + 1;
                 tokens.push(Token::Operator(Operator::new(input[i..j].to_vec())));
@@ -132,17 +138,48 @@ fn tokenize(input: &String) -> Vec<Token> {
     tokens
 }
 
+fn parse(tokens:&Vec<Token>) -> Vec<Kr> {
+    // For now we return a list of Kr variables: [f, arg1, arg2, ..]
+    // Later, it will be the entire AST
+    let krv: Vec<Kr> = tokens.iter().map(|t| t.to_kr()).collect();
 
-fn eval(env: &mut HashMap<Name, Kr>, tokens:&Vec<Token>) -> Kr {
-    // For now env is a hashmap of names to Kr variables
-    // Later it can become a kr_tree
+    if krv.len() < 3 { return krv; }
 
-    // For each token:
-    // If number -> Kr(J)
-    // If name -> check env
+    // Otherwise krv.len() >= 3 ..
+    let abc = &krv[krv.len() - 3..];
 
-    let krs: Vec<Kr> = tokens.iter().map(|t| t.to_kr(env)).collect();
+    match abc {
+        [a, Kr::Op(b), c] => vec![Kr::Op(b.clone()),a.clone(),c.clone()],
+        p => {
+            println!("Could not evaluate pattern");
+            p.to_vec()
+        }
+    }
+}
 
+fn eval(env: &mut Env, ast: Vec<Kr>) -> Kr {
+    
+    match &ast[..] {
+        [Kr::Op(f), a, b] => (f.dyadic)(env, &a, &b),
+        _ => Kr::J(0),
+    }
+
+}
+
+/*
+fn eval(env: &mut Env, tokens:&Vec<Token>) -> Kr {
+
+    let mut krs: Vec<Kr> = tokens.iter().map(|t| t.to_kr()).collect();
+
+    fn value(e: &mut Env, x: Kr) -> Kr {
+        match x {
+            Kr::Cv(t) => e.var.get(&Name { text:t }).unwrap_or(&Kr::J(0)).clone(),
+            _ => x,
+        }
+    }
+
+    krs = krs.iter().map(|k| value(env, k.clone())).collect();
+    
     if krs.len() < 3 {
         return Kr::J(0)
     };
@@ -150,13 +187,14 @@ fn eval(env: &mut HashMap<Name, Kr>, tokens:&Vec<Token>) -> Kr {
     let abc = &krs[krs.len() - 3..];
 
     match abc {
-        [a, Kr::Op(b), c] => (b.dyadic)(a,c),
+        [a, Kr::Op(b), c] => (b.dyadic)(env,a,c),
         _ => {
             println!("Could not evaluate pattern");
             Kr::J(0)
         }
     }
 }
+*/
 
 fn print(input: &String) -> usize {
     let linesize = input.len();
@@ -166,21 +204,19 @@ fn print(input: &String) -> usize {
 
 fn main() {
     // Startup logic here..
-    let mut env: HashMap<Name, Kr> = HashMap::new();
-    env.insert(Name { text:"one".to_string().into_bytes() }, Kr::J(1));
-    env.insert(Name { text:"two".to_string().into_bytes() }, Kr::J(2));
+    let mut env: Env = init::init();
 
     loop {
         // REPL loop
-        print!("kr>");
-        io::stdout().flush().expect("Failed to flush stdout");
         let input = read();
         let tokens = tokenize(&input);
         let token_strings: Vec<String> = tokens.iter().map(|x| x.as_string()).collect();
         println!("{:?}", token_strings);
         let res = print(&input);
 
-        let evalres = eval(&mut env, &tokens);
+        let ast = parse(&tokens);
+
+        let evalres = eval(&mut env, ast);
         println!("{:?}", evalres);
 
         if res == 0 { break; };
