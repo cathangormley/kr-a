@@ -14,10 +14,6 @@ pub struct Name {
     text: Vec<u8>,
 }
 
-pub struct Space {
-    text: Vec<u8>,
-}
-
 pub struct Number {
     text: Vec<u8>,
     value: Kr,
@@ -35,34 +31,23 @@ impl Number {
 pub enum Token {
     Name(Name),
     Operator(Operator),
-    Space(Space),
     Number(Number),
 }
 
 impl Token {
-    fn _characters(&self) -> String {
-        match *self {
-            Token::Name(_) => ('a'..='Z').collect::<String>(),
-            Token::Operator(_) => "+-*/".to_string(),
-            Token::Space(_) => " ".to_string(),
-            Token::Number(_) => ('0'..='9').collect::<String>(),
-        }
-    }
     fn as_string(&self) -> String {
         let t = match self {
             Token::Name(Name { text }) => { text },
             Token::Operator(Operator { text, .. }) => { text },
             Token::Number(Number { text, .. }) => { text },
-            Token::Space(Space { text }) => { text },
         };
         ascii_to_string(t)
     }
     fn to_kr(&self) -> Kr {
         match self {
-            Token::Name(n) => { Kr::Cv(n.text.clone()) }
+            Token::Name(n) => { Kr::Cv(n.text.clone()) },
             Token::Operator(op) => { Kr::Op(op.clone())},
-            Token::Number(num) => {num.value.clone()}
-            _ => {Kr::J(0)}
+            Token::Number(num) => {num.value.clone()},
         }
     }
 }
@@ -103,37 +88,34 @@ fn tokenize(input: &String) -> Vec<Token> {
         // Determine what type of token by looking at next character
         // Then possibly look ahead to find end of current token
         let c  = input[i];
-        i = match c {
+        let j: usize;
+        match c {
             b'a'..=b'z' | b'A'..=b'Z' => {
                 // Name - must look ahead
-                let j = find_first_index(&input, |x: &u8| !x.is_ascii_alphabetic(), i);
+                j = find_first_index(&input, |x: &u8| !x.is_ascii_alphabetic(), i);
                 tokens.push(Token::Name(Name { text: input[i..j].to_vec() }));
-                j
             },
             b'0'..=b'9' => {
                 // Number - must look ahead
-                let j = find_first_index(&input, |x: &u8| !x.is_ascii_digit(), i);
+                j = find_first_index(&input, |x: &u8| !x.is_ascii_digit(), i);
                 tokens.push(Token::Number(Number::new(input[i..j].to_vec())));
-                j
             },
             b'+' | b'-' | b'*' | b'%' | b':' => {
                 // Operator - push now
-                let j = i + 1;
+                j = i + 1;
                 tokens.push(Token::Operator(Operator::new(input[i..j].to_vec())));
-                j
             },
             b' ' => {
                 // Space - push now
-                let j = i + 1;
-                tokens.push(Token::Space(Space { text: input[i..j].to_vec() }));
-                j
+                j = i + 1;
+                // tokens.push(Token::Space(Space { text: input[i..j].to_vec() }));
             },
             _ => {
                 // Other - ignore
-                let j = i + 1;
-                j
+                j = i + 1;
             }
         };
+        i = j;
     }
     tokens
 }
@@ -166,35 +148,6 @@ fn eval(env: &mut Env, ast: Vec<Kr>) -> Kr {
 
 }
 
-/*
-fn eval(env: &mut Env, tokens:&Vec<Token>) -> Kr {
-
-    let mut krs: Vec<Kr> = tokens.iter().map(|t| t.to_kr()).collect();
-
-    fn value(e: &mut Env, x: Kr) -> Kr {
-        match x {
-            Kr::Cv(t) => e.var.get(&Name { text:t }).unwrap_or(&Kr::J(0)).clone(),
-            _ => x,
-        }
-    }
-
-    krs = krs.iter().map(|k| value(env, k.clone())).collect();
-    
-    if krs.len() < 3 {
-        return Kr::J(0)
-    };
-
-    let abc = &krs[krs.len() - 3..];
-
-    match abc {
-        [a, Kr::Op(b), c] => (b.dyadic)(env,a,c),
-        _ => {
-            println!("Could not evaluate pattern");
-            Kr::J(0)
-        }
-    }
-}
-*/
 
 fn print(input: &String) -> usize {
     let linesize = input.len();

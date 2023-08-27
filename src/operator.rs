@@ -30,7 +30,7 @@ pub fn kr_addition(e: &mut Env, x: &Kr, y: &Kr) -> Kr {
         (Kr::J(x), Kr::J(y)) => Kr::J(x + y),
         (Kr::E(x), Kr::E(y)) => Kr::E(x + y),
         (Kr::F(x), Kr::F(y)) => Kr::F(x + y),
-        (_, _) => Kr::J(0),
+        (_, _) => Kr::Null,
     }
 }
 
@@ -42,7 +42,7 @@ pub fn kr_subtraction(e: &mut Env, x: &Kr, y: &Kr) -> Kr {
         (Kr::J(x), Kr::J(y)) => Kr::J(x - y),
         (Kr::E(x), Kr::E(y)) => Kr::E(x - y),
         (Kr::F(x), Kr::F(y)) => Kr::F(x - y),
-        (_, _) => Kr::J(0),
+        (_, _) => Kr::Null,
     }
 }
 
@@ -54,7 +54,7 @@ pub fn kr_multiplication(e: &mut Env, x: &Kr, y: &Kr) -> Kr {
         (Kr::J(x), Kr::J(y)) => Kr::J(x * y),
         (Kr::E(x), Kr::E(y)) => Kr::E(x * y),
         (Kr::F(x), Kr::F(y)) => Kr::F(x * y),
-        (_, _) => Kr::J(0),
+        (_, _) => Kr::Null,
     }
 }
 
@@ -66,18 +66,19 @@ pub fn kr_division(e: &mut Env, x: &Kr, y: &Kr) -> Kr {
         (Kr::J(x), Kr::J(y)) => Kr::F(*x as f64 / *y as f64),
         (Kr::E(x), Kr::E(y)) => Kr::E(x / y),
         (Kr::F(x), Kr::F(y)) => Kr::F(x / y),
-        (_, _) => Kr::F(0.0),
+        (_, _) => Kr::Null,
     }
 }
 
 pub fn kr_assign(e: &mut Env, x: &Kr, y: &Kr) -> Kr {
     let y = e.value(y);
     match (x,y) {
-        (Kr::Cv(a), b) => {e.var.insert(Name { text: a.to_vec() }, b.clone()); Kr::J(0)},
-        (a, _b) => {println!("Cannot assign to {:?}", a); Kr::J(0)}
+        (Kr::Cv(a), b) => {e.var.insert(Name { text: a.to_vec() }, b.clone());},
+        (a, _b) => {println!("Cannot assign to {:?}", a)}
     }
+    Kr::Null
 }
 
 pub fn kr_dyad_default(_e: &mut Env, _x: &Kr, _y: &Kr) -> Kr {
-    Kr::J(0)
+    Kr::Null
 }
