@@ -16,6 +16,7 @@ impl Operator {
             [b'*'] => { kr_multiplication },
             [b'%'] => { kr_division },
             [b':'] => { kr_assign },
+            [b','] => { kr_join },
             _ => { kr_dyad_default }
         };
         Operator { text: text, dyadic: f }
@@ -67,6 +68,19 @@ pub fn kr_division(e: &mut Env, x: &Kr, y: &Kr) -> Kr {
         (Kr::E(x), Kr::E(y)) => Kr::E(x / y),
         (Kr::F(x), Kr::F(y)) => Kr::F(x / y),
         (_, _) => Kr::Null,
+    }
+}
+
+pub fn kr_join(e: &mut Env, x: &Kr, y: &Kr) -> Kr {
+    let x = e.value(x);
+    let y = e.value(y);
+    match (x,y) {
+        (Kr::I(x), Kr::I(y)) => Kr::Iv(vec![*x,*y]),
+        (Kr::J(x), Kr::J(y)) => Kr::Jv(vec![*x,*y]),
+        (Kr::E(x), Kr::E(y)) => Kr::Ev(vec![*x,*y]),
+        (Kr::F(x), Kr::F(y)) => Kr::Fv(vec![*x,*y]),
+        (Kr::Jv(x), Kr::Jv(y)) => Kr::Jv( [&x[..], &y[..]].concat()),
+        (_, _) => Kr::Null
     }
 }
 

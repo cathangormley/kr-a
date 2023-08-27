@@ -100,7 +100,7 @@ fn tokenize(input: &String) -> Vec<Token> {
                 j = find_first_index(&input, |x: &u8| !x.is_ascii_digit(), i);
                 tokens.push(Token::Number(Number::new(input[i..j].to_vec())));
             },
-            b'+' | b'-' | b'*' | b'%' | b':' => {
+            b'+' | b'-' | b'*' | b'%' | b':' | b',' => {
                 // Operator - push now
                 j = i + 1;
                 tokens.push(Token::Operator(Operator::new(input[i..j].to_vec())));
