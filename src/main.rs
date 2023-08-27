@@ -1,9 +1,11 @@
-use std::io::{self, Write};
+use std::{io::{self, Write}, collections::HashMap};
 
 mod operator;
+use kr::Kr;
 use operator::Operator;
 mod kr;
 
+#[derive(Eq, Hash, PartialEq)]
 struct Name {
     text: Vec<u8>,
 }
@@ -14,8 +16,18 @@ struct Space {
 
 struct Number {
     text: Vec<u8>,
+    value: Kr,
 }
 
+impl Number {
+    fn new(t: Vec<u8>) -> Self {
+        let v = match ascii_to_string(&t).parse::<i64>() {
+            Ok(v) => v,
+            Err(_) => 0,
+        };
+        Number { text: t, value: Kr::J(v)}
+    }
+}
 enum Token {
     Name(Name),
     Operator(Operator),
@@ -24,7 +36,7 @@ enum Token {
 }
 
 impl Token {
-    fn characters(&self) -> String {
+    fn _characters(&self) -> String {
         match *self {
             Token::Name(_) => ('a'..='Z').collect::<String>(),
             Token::Operator(_) => "+-*/".to_string(),
@@ -35,14 +47,26 @@ impl Token {
     fn as_string(&self) -> String {
         let t = match self {
             Token::Name(Name { text }) => { text },
-            Token::Operator(Operator { text, dyadic }) => { text },
-            Token::Number(Number { text }) => { text },
+            Token::Operator(Operator { text, .. }) => { text },
+            Token::Number(Number { text, .. }) => { text },
             Token::Space(Space { text }) => { text },
         };
-        match std::str::from_utf8(t) {
-            Ok(s) => s.to_string(),  // Conversion successful
-            Err(_) => String::new(),       // Invalid UTF-8, return an empty string
+        ascii_to_string(t)
+    }
+    fn to_kr(&self, env: &HashMap<Name, Kr> ) -> Kr {
+        match self {
+            Token::Name(n) => {env.get(n).unwrap_or(&Kr::J(0)).clone()},
+            Token::Operator(op) => { Kr::Op(op.clone())},
+            Token::Number(num) => {num.value.clone()}
+            _ => {Kr::J(0)}
         }
+    }
+}
+
+fn ascii_to_string(input: &Vec<u8>) -> String {
+    match std::str::from_utf8(input) {
+        Ok(s) => s.to_string(),  // Conversion successful
+        Err(_) => String::new(),       // Invalid UTF-8, return an empty string
     }
 }
 
@@ -83,13 +107,13 @@ fn tokenize(input: &String) -> Vec<Token> {
             b'0'..=b'9' => {
                 // Number - must look ahead
                 let j = find_first_index(&input, |x: &u8| !x.is_ascii_digit(), i);
-                tokens.push(Token::Number(Number { text: input[i..j].to_vec() }));
+                tokens.push(Token::Number(Number::new(input[i..j].to_vec())));
                 j
             },
             b'+' | b'-' | b'*' | b'/' => {
                 // Operator - push now
                 let j = i + 1;
-                tokens.push(Token::Operator(Operator::new(input[i..j].to_vec(), operator::kr_add)));
+                tokens.push(Token::Operator(Operator::new(input[i..j].to_vec())));
                 j
             },
             b' ' => {
@@ -108,6 +132,32 @@ fn tokenize(input: &String) -> Vec<Token> {
     tokens
 }
 
+
+fn eval(env: &mut HashMap<Name, Kr>, tokens:&Vec<Token>) -> Kr {
+    // For now env is a hashmap of names to Kr variables
+    // Later it can become a kr_tree
+
+    // For each token:
+    // If number -> Kr(J)
+    // If name -> check env
+
+    let krs: Vec<Kr> = tokens.iter().map(|t| t.to_kr(env)).collect();
+
+    if krs.len() < 3 {
+        return Kr::J(0)
+    };
+
+    let abc = &krs[krs.len() - 3..];
+
+    match abc {
+        [a, Kr::Op(b), c] => (b.dyadic)(a,c),
+        _ => {
+            println!("Could not evaluate pattern");
+            Kr::J(0)
+        }
+    }
+}
+
 fn print(input: &String) -> usize {
     let linesize = input.len();
     println!("Input: '{}' with length: '{}'", input.trim().to_string(), linesize);
@@ -115,7 +165,13 @@ fn print(input: &String) -> usize {
 }
 
 fn main() {
+    // Startup logic here..
+    let mut env: HashMap<Name, Kr> = HashMap::new();
+    env.insert(Name { text:"one".to_string().into_bytes() }, Kr::J(1));
+    env.insert(Name { text:"two".to_string().into_bytes() }, Kr::J(2));
+
     loop {
+        // REPL loop
         print!("kr>");
         io::stdout().flush().expect("Failed to flush stdout");
         let input = read();
@@ -123,6 +179,10 @@ fn main() {
         let token_strings: Vec<String> = tokens.iter().map(|x| x.as_string()).collect();
         println!("{:?}", token_strings);
         let res = print(&input);
+
+        let evalres = eval(&mut env, &tokens);
+        println!("{:?}", evalres);
+
         if res == 0 { break; };
     }
 }
