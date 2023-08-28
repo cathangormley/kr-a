@@ -20,12 +20,28 @@ pub struct Number {
 }
 
 impl Number {
-    fn new(t: Vec<u8>) -> Self {
-        let v = match ascii_to_string(&t).parse::<i64>() {
-            Ok(v) => v,
-            Err(_) => 0,
+    fn new(input: &Vec<u8>) -> Self {
+        // input may be 123 or 123f or 123i etc..
+        let input = std::str::from_utf8(input).expect("Could not convert to utf8");
+
+        let (num, letter) = if input.ends_with(|c: char| c.is_ascii_digit()) {
+            // input = 123
+            (input, "j")
+        } else {
+            // input 123i or 123j or ..
+            input.split_at(input.len() - 1)
         };
-        Number { text: t, value: Kr::J(v)}
+
+        
+        let value = match (num, letter) {
+            (num,"i") => Kr::I(num.parse().unwrap()),
+            (num,"j") => Kr::J(num.parse().unwrap()),
+            (num,"e") => Kr::E(num.parse().unwrap()),
+            (num,"f") => Kr::F(num.parse().unwrap()),
+            (_, _) => Kr::Null
+        };
+
+        Number { text: num.into(), value }
     }
 }
 pub enum Token {
@@ -78,6 +94,20 @@ where
     return v.len()
 }
 
+fn read_number(input: &[u8]) -> usize {
+    let mut i = 0;
+    let mut end = false;
+    for (ind, &c) in input.iter().enumerate() {
+        end = match c {
+            b'0'..=b'9' => { i = i + 1; false },
+            b'e' | b'f' | b'i' | b'j' => { i = i + 1; true },
+            _ => true,
+        };
+        if end { break; }
+    }
+    i
+}
+
 
 fn tokenize(input: &String) -> Vec<Token> {
     // input.split_whitespace().collect()
@@ -97,8 +127,10 @@ fn tokenize(input: &String) -> Vec<Token> {
             },
             b'0'..=b'9' => {
                 // Number - must look ahead
-                j = find_first_index(&input, |x: &u8| !x.is_ascii_digit(), i);
-                tokens.push(Token::Number(Number::new(input[i..j].to_vec())));
+                j = i + read_number(&input[i..]);
+                // j = find_first_index(&input, |x: &u8| !x.is_ascii_digit(), i);
+                // let ff = &input[i..];
+                tokens.push(Token::Number(Number::new(&input[i..j].to_vec())));
             },
             b'+' | b'-' | b'*' | b'%' | b':' | b',' => {
                 // Operator - push now
