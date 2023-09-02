@@ -7,6 +7,8 @@ pub enum Kr {
     E(f32), Ev(Vec<f32>),   // Real
     F(f64), Fv(Vec<f64>),   // Float
     C(u8),  Cv(Vec<u8>),    // Character
+    S(Vec<u8>),
     Op(Operator),           // Operator
-    Null                    // Null
+    Null,                   // Null
+    NN(Vec<Kr>),          // General list of variables
 }

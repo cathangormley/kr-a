@@ -9,20 +9,35 @@ use kr::Kr;
 mod init;
 use crate::init::Env;
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Clone)]
 pub struct Name {
     text: Vec<u8>,
 }
 
+impl Name {
+    fn _new(text: Vec<u8>) -> Self {
+        Name { text }
+    }
+    fn to_kr(&self) -> Kr {
+        // This would be for strings
+        // Kr::Cv(self.text.to_vec())
+        // e.value(&Kr::Cv(self.text))
+        Kr::S(self.text.clone())
+    }
+}
+
+#[derive(Clone)]
 pub struct Number {
-    text: Vec<u8>,
-    value: Kr,
+    text: Vec<u8>
 }
 
 impl Number {
-    fn new(input: &Vec<u8>) -> Self {
+    fn new(text: Vec<u8>) -> Self {
+        Number { text }
+    }
+    fn to_kr(&self) -> Kr {
         // input may be 123 or 123f or 123i etc..
-        let input = std::str::from_utf8(input).expect("Could not convert to utf8");
+        let input = std::str::from_utf8(&self.text).expect("Could not convert to utf8");
 
         let (num, letter) = if input.ends_with(|c: char| c.is_ascii_digit()) {
             // input = 123
@@ -31,39 +46,53 @@ impl Number {
             // input 123i or 123j or ..
             input.split_at(input.len() - 1)
         };
-
         
-        let value = match (num, letter) {
+        match (num, letter) {
             (num,"i") => Kr::I(num.parse().unwrap()),
             (num,"j") => Kr::J(num.parse().unwrap()),
             (num,"e") => Kr::E(num.parse().unwrap()),
             (num,"f") => Kr::F(num.parse().unwrap()),
             (_, _) => Kr::Null
-        };
-
-        Number { text: num.into(), value }
+        }
     }
 }
+
+// TODO: Split this into tokens that represent kr values and grammar helpers?
+
+#[derive(Clone)]
 pub enum Token {
     Name(Name),
     Operator(Operator),
     Number(Number),
+    // String
+    LParen, RParen,     // ( )
+    // LBracket, RBracket, // [ ]
+    // LBrace, RBrace,     // { }
 }
 
 impl Token {
     fn as_string(&self) -> String {
+        let lparen = vec![b'('];
+        let rparen = vec![b')'];
         let t = match self {
             Token::Name(Name { text }) => { text },
             Token::Operator(Operator { text, .. }) => { text },
             Token::Number(Number { text, .. }) => { text },
+            Token::LParen => { &lparen },
+            Token::RParen => { &rparen },
+            // Token::LBracket => &vec![b'['],
+            // Token::RBracket => &vec![b']'],
+            // Token::LBrace => &vec![b'{'],
+            // Token::RBrace => &vec![b'}'],
         };
         ascii_to_string(t)
     }
     fn to_kr(&self) -> Kr {
         match self {
-            Token::Name(n) => { Kr::Cv(n.text.clone()) },
-            Token::Operator(op) => { Kr::Op(op.clone())},
-            Token::Number(num) => {num.value.clone()},
+            Token::Name(name) => name.to_kr(),
+            Token::Operator(op) => op.to_kr(),
+            Token::Number(num) => num.to_kr(),
+            _ => panic!("Failed to convert token to kr"),
         }
     }
 }
@@ -96,9 +125,8 @@ where
 
 fn read_number(input: &[u8]) -> usize {
     let mut i = 0;
-    let mut end = false;
-    for (ind, &c) in input.iter().enumerate() {
-        end = match c {
+    for &c in input.iter() {
+        let end = match c {
             b'0'..=b'9' => { i = i + 1; false },
             b'e' | b'f' | b'i' | b'j' => { i = i + 1; true },
             _ => true,
@@ -109,7 +137,7 @@ fn read_number(input: &[u8]) -> usize {
 }
 
 
-fn tokenize(input: &String) -> Vec<Token> {
+fn lex(input: &String) -> Vec<Token> {
     // input.split_whitespace().collect()
     let mut tokens: Vec<Token> = Vec::new();
     let mut i = 0; // Index
@@ -130,7 +158,7 @@ fn tokenize(input: &String) -> Vec<Token> {
                 j = i + read_number(&input[i..]);
                 // j = find_first_index(&input, |x: &u8| !x.is_ascii_digit(), i);
                 // let ff = &input[i..];
-                tokens.push(Token::Number(Number::new(&input[i..j].to_vec())));
+                tokens.push(Token::Number(Number::new(input[i..j].to_vec())));
             },
             b'+' | b'-' | b'*' | b'%' | b':' | b',' => {
                 // Operator - push now
@@ -152,34 +180,58 @@ fn tokenize(input: &String) -> Vec<Token> {
     tokens
 }
 
-fn parse(tokens:&Vec<Token>) -> Vec<Kr> {
-    // For now we return a list of Kr variables: [f, arg1, arg2, ..]
-    // Later, it will be the entire AST
-    let krv: Vec<Kr> = tokens.iter().map(|t| t.to_kr()).collect();
+fn parse(tokens:&Vec<Token>) -> Kr {
+    // The result of parsing is an AST which itself is a Kr object
+    let first_token = match tokens.get(0) {
+        Some(token) => token,
+        None => return Kr::Null
+    };
 
-    if krv.len() < 3 { return krv; }
-
-    // Otherwise krv.len() >= 3 ..
-    let abc = &krv[krv.len() - 3..];
-
-    match abc {
-        [a, Kr::Op(b), c] => vec![Kr::Op(b.clone()),a.clone(),c.clone()],
-        p => {
-            println!("Could not evaluate pattern");
-            p.to_vec()
+    match first_token {
+        Token::LParen => { 
+            let n = find_first_index(tokens, |x: &Token| match x { Token::RParen => true, _ => false }, 1);
+            Kr::NN(vec![parse(&tokens[1..n].to_vec()), parse(&tokens[n+1..].to_vec())])
+        },
+        Token::RParen => { Kr::Null },
+        _ => {
+            match tokens.get(1) {
+                Some(Token::Operator(op)) => Kr::NN(vec![op.to_kr(), first_token.to_kr(), parse(&tokens[2..].to_vec())]),
+                Some(_token) => Kr::NN(vec![first_token.to_kr(), parse(&tokens[1..].to_vec())]),
+                None => first_token.to_kr(),
+            }
         }
+
+
     }
 }
 
-fn eval(env: &mut Env, ast: Vec<Kr>) -> Kr {
-    
-    match &ast[..] {
-        [Kr::Op(f), a, b] => (f.dyadic)(env, &a, &b),
-        _ => Kr::J(0),
+fn eval(env: Env, ast: Kr) -> (Env, Kr) {
+    // Recursively evaluate ast
+    match ast {
+        Kr::NN(t) => {
+            match t.get(0) {
+                Some(Kr::Op(op)) => {
+                    if op.text == vec![b':'] {
+                        let (env, res2) = eval(env, t[2].clone());
+                        (op.dyadic)(env, &t[1], &res2)
+                    } else {
+                        let (env, res1) = eval(env, t[1].clone());
+                        let (env, res2) = eval(env, t[2].clone());
+                        (op.dyadic)(env, &res1, &res2)
+                    }
+                }
+                _ => (env, Kr::NN(t))
+            }
+
+        },
+        Kr::S(ref _t) => {
+            let val = env.value(&ast).clone();
+            (env,val)
+            // (env, env.value(&Kr::S(t.to_vec())).clone())
+        },
+        other => (env, other),
     }
-
 }
-
 
 fn print(input: &String) -> usize {
     let linesize = input.len();
@@ -194,14 +246,16 @@ fn main() {
     loop {
         // REPL loop
         let input = read();
-        let tokens = tokenize(&input);
+        let tokens = lex(&input);
         let token_strings: Vec<String> = tokens.iter().map(|x| x.as_string()).collect();
         println!("{:?}", token_strings);
         let res = print(&input);
 
         let ast = parse(&tokens);
+        println!("{:?}", ast);
 
-        let evalres = eval(&mut env, ast);
+        let evalres: Kr;
+        (env, evalres) = eval(env, ast);
         println!("{:?}", evalres);
 
         if res == 0 { break; };
