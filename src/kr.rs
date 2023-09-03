@@ -10,5 +10,20 @@ pub enum Kr {
     S(Vec<u8>),
     Op(Operator),           // Operator
     Null,                   // Null
-    NN(Vec<Kr>),          // General list of variables
+    NN(Vec<Kr>),            // General list of variables
+}
+
+impl Kr {
+    pub fn print(&self) -> String {
+        match self {
+            Kr::I(n) => n.to_string(),
+            Kr::J(n) => n.to_string(),
+            Kr::E(n) => n.to_string(),
+            Kr::F(n) => n.to_string(),
+            Kr::C(c) => "\"".to_string() + &c.to_string().to_owned() + "\"",
+            Kr::S(sym) => "`".to_string() + &String::from_utf8(sym.to_vec()).unwrap(),
+            Kr::Null => "".to_string(),
+            _ => "Cannot display".to_owned()
+        }
+    }
 }

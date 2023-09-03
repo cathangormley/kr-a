@@ -15,11 +15,13 @@ pub struct Env {
     // For now env is a hashmap of names to Kr variables
     // Later it can become a kr_tree
     pub var: HashMap<Vec<u8>, Kr>,
+    pub opts: Vec<String>,
 }
 
 impl Env {
     pub fn new() -> Self {
-        Env { var: HashMap::new() }
+        let opts: Vec<String> = std::env::args().collect();
+        Env { var: HashMap::new(), opts }
     }
 
     pub fn value<'a>(&'a self, x: &'a Kr ) -> &Kr {

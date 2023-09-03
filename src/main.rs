@@ -233,31 +233,34 @@ fn eval(env: Env, ast: Kr) -> (Env, Kr) {
     }
 }
 
-fn print(input: &String) -> usize {
-    let linesize = input.len();
-    println!("Input: '{}' with length: '{}'", input.trim().to_string(), linesize);
-    linesize
+fn print(output: &Kr) {
+    println!("{}", output.print());
 }
 
 fn main() {
     // Startup logic here..
     let mut env: Env = init::init();
+    let debug = env.opts.iter().any(|s| s == "--debug");
+    
+    if debug { println!("Options {:?}", env.opts); };
 
     loop {
         // REPL loop
         let input = read();
         let tokens = lex(&input);
-        let token_strings: Vec<String> = tokens.iter().map(|x| x.as_string()).collect();
-        println!("{:?}", token_strings);
-        let res = print(&input);
-
+        if debug { 
+            let token_strings: Vec<String> = tokens.iter().map(|x| x.as_string()).collect();
+            println!("{:?}", token_strings);
+        };
         let ast = parse(&tokens);
-        println!("{:?}", ast);
+        if debug { println!("{:?}", ast); };
 
-        let evalres: Kr;
-        (env, evalres) = eval(env, ast);
-        println!("{:?}", evalres);
+        let result: Kr;
+        (env, result) = eval(env, ast);
+        if debug { println!("{:?}", result); };
 
-        if res == 0 { break; };
+        print(&result);
+
+        if input.len() == 0 { break; };
     }
 }
