@@ -23,6 +23,7 @@ impl Kr {
             Kr::C(c) => "\"".to_string() + &c.to_string().to_owned() + "\"",
             Kr::S(sym) => "`".to_string() + &String::from_utf8(sym.to_vec()).unwrap(),
             Kr::Null => "".to_string(),
+            Kr::Cv(cv) => {"\"".to_owned() + &String::from_utf8(cv.to_vec()).unwrap() + "\""},
             _ => "Cannot display".to_owned()
         }
     }

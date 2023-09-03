@@ -1,5 +1,4 @@
 use std::io::{self, Write};
-
 mod operator;
 use operator::Operator;
 
@@ -31,6 +30,7 @@ pub struct Number {
     text: Vec<u8>
 }
 
+// Digits possibly preceding a char: 123j
 impl Number {
     fn new(text: Vec<u8>) -> Self {
         Number { text }
@@ -57,6 +57,24 @@ impl Number {
     }
 }
 
+// A string surrounded by quotes: "example"
+#[derive(Clone)]
+pub struct Quoted {
+    text: Vec<u8>,
+}
+
+impl Quoted {
+    fn to_kr(&self) -> Kr {
+        if self.text.len() < 3 {
+            // If there are less than 3 elements, return an empty Cv variant.
+            Kr::Cv(Vec::new())
+        } else {
+            // Get a slice of the text excluding the first and last elements.
+            Kr::Cv(self.text[1..self.text.len() - 1].to_vec())
+        }
+    }
+}
+
 // TODO: Split this into tokens that represent kr values and grammar helpers?
 
 #[derive(Clone)]
@@ -64,7 +82,7 @@ pub enum Token {
     Name(Name),
     Operator(Operator),
     Number(Number),
-    // String
+    Quoted(Quoted),
     LParen, RParen,     // ( )
     // LBracket, RBracket, // [ ]
     // LBrace, RBrace,     // { }
@@ -75,9 +93,10 @@ impl Token {
         let lparen = vec![b'('];
         let rparen = vec![b')'];
         let t = match self {
-            Token::Name(Name { text }) => { text },
-            Token::Operator(Operator { text, .. }) => { text },
-            Token::Number(Number { text, .. }) => { text },
+            Token::Name(Name { text }) => text,
+            Token::Operator(Operator { text, .. }) => text,
+            Token::Number(Number { text, .. }) => text,
+            Token::Quoted(Quoted { text }) => text,
             Token::LParen => { &lparen },
             Token::RParen => { &rparen },
             // Token::LBracket => &vec![b'['],
@@ -92,6 +111,7 @@ impl Token {
             Token::Name(name) => name.to_kr(),
             Token::Operator(op) => op.to_kr(),
             Token::Number(num) => num.to_kr(),
+            Token::Quoted(s) => s.to_kr(),
             _ => panic!("Failed to convert token to kr"),
         }
     }
@@ -164,6 +184,10 @@ fn lex(input: &String) -> Vec<Token> {
                 // Operator - push now
                 j = i + 1;
                 tokens.push(Token::Operator(Operator::new(input[i..j].to_vec())));
+            },
+            b'"' => {
+                j = 1 + find_first_index(&input, |x: &u8| *x == b'"', i+1);
+                tokens.push(Token::Quoted(Quoted { text: input[i..j].to_vec() }));
             },
             b' ' => {
                 // Space - push now

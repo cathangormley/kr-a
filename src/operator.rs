@@ -98,6 +98,12 @@ pub fn kr_join(e: Env, x: &Kr, y: &Kr) -> (Env, Kr) {
         (Kr::E(x), Kr::E(y)) => Kr::Ev(vec![*x,*y]),
         (Kr::F(x), Kr::F(y)) => Kr::Fv(vec![*x,*y]),
         (Kr::Jv(x), Kr::Jv(y)) => Kr::Jv( [&x[..], &y[..]].concat()),
+        (Kr::Cv(x), Kr::Cv(y)) => {
+            let mut v: Vec<u8> = Vec::new();
+            v.extend_from_slice(x);
+            v.extend_from_slice(y);
+            Kr::Cv(v)
+        },
         (_, _) => Kr::Null
     };
     (e, res)
