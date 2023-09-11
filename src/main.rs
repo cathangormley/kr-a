@@ -18,7 +18,7 @@ impl Name {
         Name { text }
     }
     fn to_kr(&self) -> Kr {
-        Kr::S(self.text.clone())
+        Kr::NN(vec![Kr::Null, Kr::S(self.text.clone())])
     }
 }
 
@@ -72,6 +72,21 @@ impl Quoted {
     }
 }
 
+#[derive(Clone)]
+pub struct Symbol {
+    text: Vec<u8>,
+}
+
+impl Symbol {
+    fn new(text: Vec<u8>) -> Self {
+        Symbol { text }
+    }
+    fn to_kr(&self) -> Kr {
+        Kr::S(self.text.clone())
+    }
+}
+
+
 // TODO: Split this into tokens that represent kr values and grammar helpers?
 
 #[derive(Clone)]
@@ -80,6 +95,7 @@ pub enum Token {
     Operator(Operator),
     Number(Number),
     Quoted(Quoted),
+    Symbol(Symbol),
     LParen, RParen,     // ( )
     // LBracket, RBracket, // [ ]
     // LBrace, RBrace,     // { }
@@ -94,6 +110,7 @@ impl Token {
             Token::Operator(Operator { text, .. }) => text,
             Token::Number(Number { text, .. }) => text,
             Token::Quoted(Quoted { text }) => text,
+            Token::Symbol(Symbol { text }) => text,
             Token::LParen => { &lparen },
             Token::RParen => { &rparen },
             // Token::LBracket => &vec![b'['],
@@ -109,6 +126,7 @@ impl Token {
             Token::Operator(op) => op.to_kr(),
             Token::Number(num) => num.to_kr(),
             Token::Quoted(s) => s.to_kr(),
+            Token::Symbol(s) => s.to_kr(),
             _ => panic!("Failed to convert token to kr"),
         }
     }
@@ -186,6 +204,10 @@ fn lex(input: &String) -> Vec<Token> {
                 j = 1 + find_first_index(&input, |x: &u8| *x == b'"', i+1);
                 tokens.push(Token::Quoted(Quoted { text: input[i..j].to_vec() }));
             },
+            b'`' => {
+                j = find_first_index(&input, |x: &u8| !x.is_ascii_alphabetic(), i+1);
+                tokens.push(Token::Symbol(Symbol::new(input[i+1..j].to_vec())));
+            }
             b'(' => {
                 j = i + 1;
                 tokens.push(Token::LParen);
@@ -296,6 +318,10 @@ fn eval(mut env: Env, ast: Kr) -> (Env, Kr) {
                     // Return the final environment and the vector of results
                     match &t[0] {
                         Kr::Op(op) => { (op.dyadic)(env, results) },
+                        Kr::Null => { 
+                            let v = env.val(&t[1]);
+                            (env, v)
+                        }
                         _ => (env, t[0].clone())
                     }
                 }
