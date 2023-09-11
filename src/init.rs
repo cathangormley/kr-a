@@ -23,16 +23,15 @@ impl Env {
         let opts: Vec<String> = std::env::args().collect();
         Env { var: HashMap::new(), opts }
     }
-
-    pub fn value<'a>(&'a self, x: &'a Kr ) -> &Kr {
+    pub fn val(&self, x: &Kr) -> Kr {
         match x {
-            Kr::S(t) => {
-                match self.var.get(t) {
-                    Some(kr) => kr,
-                    None => &Kr::Null
+            Kr::S(s) => {
+                match self.var.get(s) {
+                    Some(kr) => kr.clone(),
+                    None => Kr::Null,
                 }
             },
-            _ => x,
+            _ => x.clone(),
         }
     }
 }

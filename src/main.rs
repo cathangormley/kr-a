@@ -18,9 +18,6 @@ impl Name {
         Name { text }
     }
     fn to_kr(&self) -> Kr {
-        // This would be for strings
-        // Kr::Cv(self.text.to_vec())
-        // e.value(&Kr::Cv(self.text))
         Kr::S(self.text.clone())
     }
 }
@@ -189,6 +186,14 @@ fn lex(input: &String) -> Vec<Token> {
                 j = 1 + find_first_index(&input, |x: &u8| *x == b'"', i+1);
                 tokens.push(Token::Quoted(Quoted { text: input[i..j].to_vec() }));
             },
+            b'(' => {
+                j = i + 1;
+                tokens.push(Token::LParen);
+            },
+            b')' => {
+                j = i + 1;
+                tokens.push(Token::RParen);
+            }
             b' ' => {
                 // Space - push now
                 j = i + 1;
@@ -228,8 +233,8 @@ fn parse(tokens:&Vec<Token>) -> Kr {
 
     }
 }
-
-fn eval(env: Env, ast: Kr) -> (Env, Kr) {
+/*
+fn _eval(env: Env, ast: Kr) -> (Env, Kr) {
     // Recursively evaluate ast
     match ast {
         Kr::NN(t) => {
@@ -243,7 +248,11 @@ fn eval(env: Env, ast: Kr) -> (Env, Kr) {
                         let (env, res2) = eval(env, t[2].clone());
                         (op.dyadic)(env, &res1, &res2)
                     }
-                }
+                },
+                Some(k) => {
+                    let (env, res) = eval(env, k.clone());
+                    (env, res)
+                },
                 _ => (env, Kr::NN(t))
             }
 
@@ -253,6 +262,45 @@ fn eval(env: Env, ast: Kr) -> (Env, Kr) {
             (env,val)
             // (env, env.value(&Kr::S(t.to_vec())).clone())
         },
+        other => (env, other),
+    }
+}
+*/
+
+fn eval(mut env: Env, ast: Kr) -> (Env, Kr) {
+    // Recursively evaluate ast
+    // A singleton list means the value assigned to that name
+    match ast {
+        Kr::NN(t) => {
+            match t.len() {
+                0 => (env, Kr::Null),
+                1 => {
+                    match &t[0] {
+                        Kr::S(_name) => (env.clone(), env.val(&t[0])),
+                        k => (env, k.clone()),
+                    }
+                },
+                _ => {
+                    // Initialize a vector to store the results
+                    let mut results: Vec<Kr> = Vec::new();
+
+                    // Iterate through the elements of t, starting from the second element (index 1)
+                    for i in 1..t.len() {
+                        let (new_env, result) = eval(env.clone(), t[i].clone());
+                        // Append the result to the results vector
+                        results.push(result);
+                        // Update the environment for the next iteration
+                        env = new_env;
+                    }
+
+                    // Return the final environment and the vector of results
+                    match &t[0] {
+                        Kr::Op(op) => { (op.dyadic)(env, results) },
+                        _ => (env, t[0].clone())
+                    }
+                }
+            }
+        }
         other => (env, other),
     }
 }
