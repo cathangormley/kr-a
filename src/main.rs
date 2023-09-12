@@ -237,24 +237,17 @@ fn parse(tokens:&Vec<Token>) -> Kr {
                 None => first_token.to_kr(),
             }
         }
-
-
     }
 }
 
 fn eval(mut env: Env, ast: Kr) -> (Env, Kr) {
     // Recursively evaluate ast
-    // A singleton list means the value assigned to that name
+    // A list of the form [(::); `name] means the value assigned to that name
     match ast {
         Kr::NN(t) => {
             match t.len() {
                 0 => (env, Kr::Null),
-                1 => {
-                    match &t[0] {
-                        Kr::S(_name) => (env.clone(), env.val(&t[0])),
-                        k => (env, k.clone()),
-                    }
-                },
+                1 => (env, t[0].clone()),
                 _ => {
                     // Initialize a vector to store the results
                     let mut results: Vec<Kr> = Vec::new();
