@@ -258,16 +258,17 @@ fn eval(mut env: Env, ast: Kr) -> (Env, Kr) {
                 _ => {
                     // Initialize a vector to store the results
                     let mut results: Vec<Kr> = Vec::new();
-
+ 
                     // Iterate through the elements of t, starting from the second element (index 1)
-                    for i in 1..t.len() {
+                    for i in 0..t.len() {
                         let (new_env, result) = eval(env, t[i].clone());
                         // Append the result to the results vector
                         results.push(result);
                         // Update the environment for the next iteration
                         env = new_env;
                     }
-                    t[0].apply(env, results)
+                    let (first, rest) = results.split_first().unwrap();
+                    first.apply(env, Vec::from(rest))                   
                 }
             }
         }

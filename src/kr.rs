@@ -4,15 +4,16 @@ use crate::init::Env;
 
 #[derive(Clone, Debug)]
 pub enum Kr {
-    I(i32), Iv(Vec<i32>),   // Integer
-    J(i64), Jv(Vec<i64>),   // Long 
-    E(f32), Ev(Vec<f32>),   // Real
-    F(f64), Fv(Vec<f64>),   // Float
-    C(u8),  Cv(Vec<u8>),    // Character
+    // B(bool),Bv(Vec<bool>),   // Boolean
+    I(i32), Iv(Vec<i32>),       // Integer
+    J(i64), Jv(Vec<i64>),       // Long 
+    E(f32), Ev(Vec<f32>),       // Real
+    F(f64), Fv(Vec<f64>),       // Float
+    C(u8),  Cv(Vec<u8>),        // Character
     S(Text),
-    Op(Operator),           // Operator
-    Null,                   // Null
-    NN(Vec<Kr>),            // General list of variables
+    Op(Operator),               // Operator
+    Null,                       // Null
+    NN(Vec<Kr>),                // General list of variables
 }
 
 impl Kr {
@@ -23,9 +24,22 @@ impl Kr {
             Kr::E(n) => n.to_string(),
             Kr::F(n) => n.to_string(),
             Kr::C(c) => "\"".to_string() + &c.to_string().to_owned() + "\"",
-            Kr::S(sym) => { "`".to_string() + &sym.to_string()}, // "`".to_string() + &String::from_utf8(sym.to_vec()).unwrap(),
-            Kr::Null => "".to_string(),
+            Kr::S(sym) => { "`".to_string() + &sym.to_string()},
+            Kr::Null => "(::)".to_string(),
             Kr::Cv(cv) => {"\"".to_owned() + &String::from_utf8(cv.to_vec()).unwrap() + "\""},
+            Kr::Op(op) => op.text.to_string(),
+            Kr::NN(kl) => {
+                let mut output = String::new();
+                output.push('[');
+                for k in kl {
+                    output.push_str(&k.print());
+                    output.push_str("; ");
+                }
+                output.pop();
+                output.pop();
+                output.push(']');
+                output
+            }
             _ => "Cannot display".to_owned()
         }
     }
