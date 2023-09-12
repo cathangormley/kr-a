@@ -241,39 +241,6 @@ fn parse(tokens:&Vec<Token>) -> Kr {
 
     }
 }
-/*
-fn _eval(env: Env, ast: Kr) -> (Env, Kr) {
-    // Recursively evaluate ast
-    match ast {
-        Kr::NN(t) => {
-            match t.get(0) {
-                Some(Kr::Op(op)) => {
-                    if op.text == vec![b':'] {
-                        let (env, res2) = eval(env, t[2].clone());
-                        (op.dyadic)(env, &t[1], &res2)
-                    } else {
-                        let (env, res1) = eval(env, t[1].clone());
-                        let (env, res2) = eval(env, t[2].clone());
-                        (op.dyadic)(env, &res1, &res2)
-                    }
-                },
-                Some(k) => {
-                    let (env, res) = eval(env, k.clone());
-                    (env, res)
-                },
-                _ => (env, Kr::NN(t))
-            }
-
-        },
-        Kr::S(ref _t) => {
-            let val = env.value(&ast).clone();
-            (env,val)
-            // (env, env.value(&Kr::S(t.to_vec())).clone())
-        },
-        other => (env, other),
-    }
-}
-*/
 
 fn eval(mut env: Env, ast: Kr) -> (Env, Kr) {
     // Recursively evaluate ast
