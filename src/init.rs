@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use crate::kr::Kr;
 
+use crate::text::Text;
+
 pub fn init() -> Env {
-
     let mut env: Env = Env::new();
-    env.var.insert("one".to_string().into_bytes(), Kr::J(1));
-    env.var.insert("two".to_string().into_bytes(), Kr::J(2));
-
+    env.var.insert(Text::from_str("one"), Kr::J(1));
+    env.var.insert(Text::from_str("two"), Kr::J(2));
     env
 }
 
@@ -14,7 +14,7 @@ pub fn init() -> Env {
 pub struct Env {
     // For now env is a hashmap of names to Kr variables
     // Later it can become a kr_tree
-    pub var: HashMap<Vec<u8>, Kr>,
+    pub var: HashMap<Text, Kr>,
     pub opts: Vec<String>,
 }
 

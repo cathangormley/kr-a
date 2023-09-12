@@ -1,33 +1,16 @@
-use std::fmt::Debug;
-use std::str;
-
 use crate::kr::Kr;
 use crate::init::Env;
+use crate::text::Text;
 
+#[derive(Debug, Clone)]
 pub struct Operator {
-    pub text: Vec<u8>,
+    pub text: Text,
     pub dyadic: fn(Env, Vec<Kr>) -> (Env, Kr),
 }
 
-impl Debug for Operator {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({})", str::from_utf8(&self.text).expect("Invalid text"))
-    }
-}
-
-impl Clone for Operator {
-    fn clone(&self) -> Self {
-        // Clone the text and create a new boxed closure by cloning the existing one.
-        Operator {
-            text: self.text.clone(),
-            dyadic: self.dyadic.clone(),
-        }
-    }
-}
-
 impl Operator {
-    pub fn new(text: Vec<u8>) -> Self {
-        let f: fn(Env, Vec<Kr>) -> (Env, Kr) = match text[..] {
+    pub fn new(text: Text) -> Self {
+        let f: fn(Env, Vec<Kr>) -> (Env, Kr) = match text.0[..] {
             [b'+'] => { kr_addition },
             [b'-'] => { kr_subtraction },
             [b'*'] => { kr_multiplication },
@@ -150,7 +133,7 @@ pub fn kr_assign(mut e: Env, args: Vec<Kr>) -> (Env, Kr) {
     if args.len() != 2 { return (e, Kr::Null) };
     let y = e.val(&args[1]);
     match (&args[0],y) {
-        (Kr::S(a), b) => {e.var.insert(a.to_vec(), b.clone());},
+        (Kr::S(a), b) => {e.var.insert(a.clone(), b.clone());},
         (a, _b) => {println!("Cannot assign to {:?}", a)}
     }
     (e, Kr::Null)

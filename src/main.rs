@@ -8,37 +8,35 @@ use kr::Kr;
 mod init;
 use crate::init::Env;
 
+mod text;
+use crate::text::Text;
+
 #[derive(Eq, Hash, PartialEq, Clone)]
-pub struct Name {
-    text: Vec<u8>,
-}
+pub struct Name(Text);
 
 impl Name {
-    fn _new(text: Vec<u8>) -> Self {
-        Name { text }
+    fn _new(text: Text) -> Self {
+        Name(text)
     }
-    fn to_kr(&self) -> Kr {
-        Kr::NN(vec![Kr::Null, Kr::S(self.text.clone())])
+    fn parse(&self) -> Kr {
+        Kr::NN(vec![Kr::Null, Kr::S(self.0.clone())])
     }
 }
 
 #[derive(Clone)]
-pub struct Number {
-    text: Vec<u8>
-}
+pub struct Number(Text);
 
 // Digits possibly preceding a char: 123j
 impl Number {
-    fn new(text: Vec<u8>) -> Self {
-        Number { text }
+    fn _new(text: Text) -> Self {
+        Number(text)
     }
-    fn to_kr(&self) -> Kr {
+    fn parse(&self) -> Kr {
         // input may be 123 or 123f or 123i etc..
-        let input = std::str::from_utf8(&self.text).expect("Could not convert to utf8");
-
+        let input = self.0.to_string();
         let (num, letter) = if input.ends_with(|c: char| c.is_ascii_digit()) {
             // input = 123
-            (input, "j")
+            (&input[..], "j")
         } else {
             // input 123i or 123j or ..
             input.split_at(input.len() - 1)
@@ -55,34 +53,29 @@ impl Number {
 }
 
 // A string surrounded by quotes: "example"
+// Text is the characters between the quotes
 #[derive(Clone)]
-pub struct Quoted {
-    text: Vec<u8>,
-}
+pub struct Quoted(Text);
 
 impl Quoted {
-    fn to_kr(&self) -> Kr {
-        if self.text.len() < 3 {
-            // If there are less than 3 elements, return an empty Cv variant.
-            Kr::Cv(Vec::new())
-        } else {
-            // Get a slice of the text excluding the first and last elements.
-            Kr::Cv(self.text[1..self.text.len() - 1].to_vec())
-        }
+    fn new(text: Text) -> Self {
+        Quoted(text)
+    }
+    fn parse(&self) -> Kr {
+        // TODO: there should be logic to handle "\t\netc.."
+        Kr::Cv(self.0.0.clone())
     }
 }
 
 #[derive(Clone)]
-pub struct Symbol {
-    text: Vec<u8>,
-}
+pub struct Symbol(Text);
 
 impl Symbol {
-    fn new(text: Vec<u8>) -> Self {
-        Symbol { text }
+    fn new(text: Text) -> Self {
+        Symbol(text)
     }
-    fn to_kr(&self) -> Kr {
-        Kr::S(self.text.clone())
+    fn parse(&self) -> Kr {
+        Kr::S(self.0.clone())
     }
 }
 
@@ -103,14 +96,14 @@ pub enum Token {
 
 impl Token {
     fn as_string(&self) -> String {
-        let lparen = vec![b'('];
-        let rparen = vec![b')'];
+        let lparen = Text::from_str("(");
+        let rparen = Text::from_str(")");
         let t = match self {
-            Token::Name(Name { text }) => text,
+            Token::Name(Name(text)) => text,
             Token::Operator(Operator { text, .. }) => text,
-            Token::Number(Number { text, .. }) => text,
-            Token::Quoted(Quoted { text }) => text,
-            Token::Symbol(Symbol { text }) => text,
+            Token::Number(Number(text)) => text,
+            Token::Quoted(Quoted(text)) => text,
+            Token::Symbol(Symbol(text)) => text,
             Token::LParen => { &lparen },
             Token::RParen => { &rparen },
             // Token::LBracket => &vec![b'['],
@@ -118,24 +111,17 @@ impl Token {
             // Token::LBrace => &vec![b'{'],
             // Token::RBrace => &vec![b'}'],
         };
-        ascii_to_string(t)
+        t.to_string()
     }
     fn to_kr(&self) -> Kr {
         match self {
-            Token::Name(name) => name.to_kr(),
+            Token::Name(name) => name.parse(),
             Token::Operator(op) => op.to_kr(),
-            Token::Number(num) => num.to_kr(),
-            Token::Quoted(s) => s.to_kr(),
-            Token::Symbol(s) => s.to_kr(),
+            Token::Number(num) => num.parse(),
+            Token::Quoted(s) => s.parse(),
+            Token::Symbol(s) => s.parse(),
             _ => panic!("Failed to convert token to kr"),
         }
-    }
-}
-
-fn ascii_to_string(input: &Vec<u8>) -> String {
-    match std::str::from_utf8(input) {
-        Ok(s) => s.to_string(),  // Conversion successful
-        Err(_) => String::new(),       // Invalid UTF-8, return an empty string
     }
 }
 
@@ -176,37 +162,37 @@ fn lex(input: &String) -> Vec<Token> {
     // input.split_whitespace().collect()
     let mut tokens: Vec<Token> = Vec::new();
     let mut i = 0; // Index
-    let input = input.as_bytes().to_owned();
+    // let input = input.as_bytes().to_owned();
+    let input = Text::from_str(input);
     while i < input.len() {
         // Determine what type of token by looking at next character
         // Then possibly look ahead to find end of current token
-        let c  = input[i];
+        let c  = input.get(i).unwrap();
         let j: usize;
         match c {
             b'a'..=b'z' | b'A'..=b'Z' => {
                 // Name - must look ahead
-                j = find_first_index(&input, |x: &u8| !x.is_ascii_alphabetic(), i);
-                tokens.push(Token::Name(Name { text: input[i..j].to_vec() }));
+                j = input.find_first(|x: &u8| !x.is_ascii_alphabetic(), i);
+                // tokens.push(Token::Name(Name { text: input[i..j].to_vec() }));
+                tokens.push(Token::Name(Name(Text::from_slice(&input.0[i..j]))))
             },
             b'0'..=b'9' => {
                 // Number - must look ahead
-                j = i + read_number(&input[i..]);
-                // j = find_first_index(&input, |x: &u8| !x.is_ascii_digit(), i);
-                // let ff = &input[i..];
-                tokens.push(Token::Number(Number::new(input[i..j].to_vec())));
+                j = i + read_number(&input.0[i..]);
+                tokens.push(Token::Number(Number(Text::from_slice(&input.0[i..j]))));
             },
             b'+' | b'-' | b'*' | b'%' | b':' | b',' => {
                 // Operator - push now
                 j = i + 1;
-                tokens.push(Token::Operator(Operator::new(input[i..j].to_vec())));
+                tokens.push(Token::Operator(Operator::new(Text::from_slice(&input.0[i..j]))));
             },
             b'"' => {
-                j = 1 + find_first_index(&input, |x: &u8| *x == b'"', i+1);
-                tokens.push(Token::Quoted(Quoted { text: input[i..j].to_vec() }));
+                j = 1 + input.find_first(|x: &u8| *x == b'"', i+1);
+                tokens.push(Token::Quoted(Quoted::new(Text::from_slice(&input.0[i+1..j-1]))));
             },
             b'`' => {
-                j = find_first_index(&input, |x: &u8| !x.is_ascii_alphabetic(), i+1);
-                tokens.push(Token::Symbol(Symbol::new(input[i+1..j].to_vec())));
+                j = input.find_first(|x: &u8| !x.is_ascii_alphabetic(), i+1);
+                tokens.push(Token::Symbol(Symbol::new(Text::from_slice(&input.0[i+1..j]))));
             }
             b'(' => {
                 j = i + 1;

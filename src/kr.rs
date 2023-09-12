@@ -1,4 +1,5 @@
 use crate::operator::Operator;
+use crate::text::Text;
 
 #[derive(Clone, Debug)]
 pub enum Kr {
@@ -7,7 +8,7 @@ pub enum Kr {
     E(f32), Ev(Vec<f32>),   // Real
     F(f64), Fv(Vec<f64>),   // Float
     C(u8),  Cv(Vec<u8>),    // Character
-    S(Vec<u8>),
+    S(Text),
     Op(Operator),           // Operator
     Null,                   // Null
     NN(Vec<Kr>),            // General list of variables
@@ -21,7 +22,7 @@ impl Kr {
             Kr::E(n) => n.to_string(),
             Kr::F(n) => n.to_string(),
             Kr::C(c) => "\"".to_string() + &c.to_string().to_owned() + "\"",
-            Kr::S(sym) => "`".to_string() + &String::from_utf8(sym.to_vec()).unwrap(),
+            Kr::S(sym) => { "`".to_string() + &sym.to_string()}, // "`".to_string() + &String::from_utf8(sym.to_vec()).unwrap(),
             Kr::Null => "".to_string(),
             Kr::Cv(cv) => {"\"".to_owned() + &String::from_utf8(cv.to_vec()).unwrap() + "\""},
             _ => "Cannot display".to_owned()
