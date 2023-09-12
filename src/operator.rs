@@ -2,10 +2,18 @@ use crate::kr::Kr;
 use crate::init::Env;
 use crate::text::Text;
 
-#[derive(Debug, Clone)]
+use std::fmt::Debug;
+
+#[derive(Clone)]
 pub struct Operator {
     pub text: Text,
     pub dyadic: fn(Env, Vec<Kr>) -> (Env, Kr),
+}
+
+impl Debug for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({})", self.text.to_string())
+    }
 }
 
 impl Operator {

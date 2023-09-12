@@ -1,5 +1,6 @@
 use crate::operator::Operator;
 use crate::text::Text;
+use crate::init::Env;
 
 #[derive(Clone, Debug)]
 pub enum Kr {
@@ -26,6 +27,23 @@ impl Kr {
             Kr::Null => "".to_string(),
             Kr::Cv(cv) => {"\"".to_owned() + &String::from_utf8(cv.to_vec()).unwrap() + "\""},
             _ => "Cannot display".to_owned()
+        }
+    }
+}
+
+impl Kr {
+    pub fn apply(&self, env: Env, args: Vec<Kr>) -> (Env, Kr) {
+        match self {
+            Kr::Op(op) => (op.dyadic)(env, args),
+            Kr::Null => {
+                if let Some(Kr::S(s)) = args.first() {
+                    let v = env.val(&Kr::S(s.clone()));
+                    (env, v)
+                } else {
+                    (env, Kr::Null)
+                }
+            }
+            x => (env, x.clone())
         }
     }
 }

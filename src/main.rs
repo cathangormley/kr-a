@@ -261,22 +261,13 @@ fn eval(mut env: Env, ast: Kr) -> (Env, Kr) {
 
                     // Iterate through the elements of t, starting from the second element (index 1)
                     for i in 1..t.len() {
-                        let (new_env, result) = eval(env.clone(), t[i].clone());
+                        let (new_env, result) = eval(env, t[i].clone());
                         // Append the result to the results vector
                         results.push(result);
                         // Update the environment for the next iteration
                         env = new_env;
                     }
-
-                    // Return the final environment and the vector of results
-                    match &t[0] {
-                        Kr::Op(op) => { (op.dyadic)(env, results) },
-                        Kr::Null => { 
-                            let v = env.val(&t[1]);
-                            (env, v)
-                        }
-                        _ => (env, t[0].clone())
-                    }
+                    t[0].apply(env, results)
                 }
             }
         }
