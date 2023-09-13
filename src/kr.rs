@@ -27,7 +27,7 @@ impl Kr {
             Kr::S(sym) => { "`".to_string() + &sym.to_string()},
             Kr::Null => "(::)".to_string(),
             Kr::Cv(cv) => {"\"".to_owned() + &String::from_utf8(cv.to_vec()).unwrap() + "\""},
-            Kr::Op(op) => op.text.to_string(),
+            Kr::Op(op) => op.to_string(),
             Kr::NN(kl) => {
                 let mut output = String::new();
                 output.push('[');

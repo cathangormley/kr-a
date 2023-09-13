@@ -4,33 +4,38 @@ use crate::text::Text;
 
 use std::fmt::Debug;
 
-#[derive(Clone)]
-pub struct Operator {
-    pub text: Text,
-    pub dyadic: fn(Env, Vec<Kr>) -> (Env, Kr),
+#[derive(Clone, Debug, Copy)]
+pub enum Op {
+    Addition,
+    Subtraction,
+    Multiplication,
+    Division,
+    Assign,
+    Join,
 }
 
-impl Debug for Operator {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({})", self.text.to_string())
-    }
+#[derive(Clone, Debug)]
+pub struct Operator {
+    pub op: Op,
+    pub dyadic: fn(Env, Vec<Kr>) -> (Env, Kr),
+    pub text: Text,
 }
 
 impl Operator {
-    pub fn new(text: Text) -> Self {
-        let f: fn(Env, Vec<Kr>) -> (Env, Kr) = match text.0[..] {
-            [b'+'] => { kr_addition },
-            [b'-'] => { kr_subtraction },
-            [b'*'] => { kr_multiplication },
-            [b'%'] => { kr_division },
-            [b':'] => { kr_assign },
-            [b','] => { kr_join },
-            _ => { kr_dyad_default },
+    pub fn new(op: Op) -> Self {
+        let (f, t): (fn(Env, Vec<Kr>) -> (Env, Kr), &str) = match op {
+            Op::Addition => { (kr_addition, "+") },
+            Op::Subtraction => { (kr_subtraction, "-") },
+            Op::Multiplication => { (kr_multiplication, "*") },
+            Op::Division => { (kr_division, "%") },
+            Op::Assign => { (kr_assign, ":") },
+            Op::Join => { (kr_join, ",") },
         };
-        Operator { text: text, dyadic: f }
+        Operator { op, dyadic: f, text: Text::from_str(t) }
     }
-    pub fn to_kr(&self) -> Kr {
-        Kr::Op(self.clone())
+
+    pub fn to_string(&self) -> String {
+        self.text.to_string()
     }
 }
 
@@ -144,9 +149,5 @@ pub fn kr_assign(mut e: Env, args: Vec<Kr>) -> (Env, Kr) {
         (Kr::S(a), b) => {e.var.insert(a.clone(), b.clone());},
         (a, _b) => {println!("Cannot assign to {:?}", a)}
     }
-    (e, Kr::Null)
-}
-
-pub fn kr_dyad_default(e: Env, _args: Vec<Kr>) -> (Env, Kr) {
     (e, Kr::Null)
 }

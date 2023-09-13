@@ -1,26 +1,26 @@
 use crate::text::Text;
 use crate::kr::Kr;
-use crate::operator::Operator;
+use crate::operator::{Operator, Op};
 
 #[derive(Eq, Hash, PartialEq, Clone)]
-pub struct Name(Text);
+pub struct NameToken(Text);
 
-impl Name {
+impl NameToken {
     pub fn new(text: Text) -> Self {
-        Name(text)
+        NameToken(text)
     }
-    fn parse(&self) -> Kr {
-        Kr::NN(vec![Kr::Null, Kr::S(self.0.clone())])
+    fn parse(&self) -> Vec<Kr> {
+        vec![Kr::Null, Kr::S(self.0.clone())]
     }
 }
 
 #[derive(Clone)]
-pub struct Number(Text);
+pub struct NumberToken(Text);
 
 // Digits possibly preceding a char: 123j
-impl Number {
+impl NumberToken {
     pub fn new(text: Text) -> Self {
-        Number(text)
+        NumberToken(text)
     }
     fn parse(&self) -> Kr {
         // input may be 123 or 123f or 123i etc..
@@ -46,72 +46,107 @@ impl Number {
 // A string surrounded by quotes: "example"
 // Text is the characters between the quotes
 #[derive(Clone)]
-pub struct Quoted(Text);
+pub struct QuotedToken(Text);
 
-impl Quoted {
+impl QuotedToken {
     pub fn new(text: Text) -> Self {
-        Quoted(text)
+        QuotedToken(text)
     }
-    fn parse(&self) -> Kr {
+    fn parse(&self) -> Vec<u8> {
         // TODO: there should be logic to handle "\t\netc.."
-        Kr::Cv(self.0.0.clone())
+        self.0.0.clone()
     }
 }
 
 #[derive(Clone)]
-pub struct Symbol(Text);
+pub struct SymbolToken(Text);
 
-impl Symbol {
+impl SymbolToken {
     pub fn new(text: Text) -> Self {
-        Symbol(text)
+        SymbolToken(text)
     }
-    fn parse(&self) -> Kr {
-        Kr::S(self.0.clone())
+    fn parse(&self) -> Text {
+        self.0.clone()
     }
 }
 
+#[derive(Clone)]
+pub struct OperatorToken {
+    text: Text,
+    op: Op
+}
+
+
+impl OperatorToken {
+    pub fn new(text: Text) -> Self {
+        let op =match text.0[..] {
+            [b'+'] => Op::Addition,
+            [b'-'] => Op::Subtraction,
+            [b'*'] => Op::Multiplication,
+            [b'%'] => Op::Division,
+            [b':'] => Op::Assign,
+            [b','] => Op::Join,
+            // [b"**"] => OperatorToken::Power,
+            _ => panic!("Unexpected token")
+        };
+        OperatorToken { text, op }
+    }
+    pub fn parse(&self) -> Operator {
+        Operator::new(self.op)
+    }
+}
 
 // TODO: Split this into tokens that represent kr values and grammar helpers?
 
+// Tokens that represent some Kr data
+#[derive(Clone)]
+pub enum KrToken {
+    Name(NameToken),
+    Operator(OperatorToken),
+    Number(NumberToken),
+    Quoted(QuotedToken),
+    Symbol(SymbolToken),
+}
+
+impl KrToken {
+    pub fn to_kr(&self) -> Kr {
+        match self {
+            KrToken::Name(name) => Kr::NN(name.parse()),
+            KrToken::Operator(op) => Kr::Op(op.parse()),
+            KrToken::Number(num) => num.parse(),
+            KrToken::Quoted(s) => Kr::Cv(s.parse()),
+            KrToken::Symbol(s) => Kr::S(s.parse()),
+        }
+    }
+    fn get_text(&self) -> &Text {
+        match self {
+            KrToken::Name(name) => &name.0,
+            KrToken::Operator(op) => &op.text,
+            KrToken::Number(num) => &num.0,
+            KrToken::Quoted(s) => &s.0,
+            KrToken::Symbol(s) => &s.0,
+        }
+    }
+    fn as_string(&self) -> String {
+        self.get_text().to_string()
+    }
+}
+
+
 #[derive(Clone)]
 pub enum Token {
-    Name(Name),
-    Operator(Operator),
-    Number(Number),
-    Quoted(Quoted),
-    Symbol(Symbol),
-    LParen, RParen,     // ( )
-    // LBracket, RBracket, // [ ]
-    // LBrace, RBrace,     // { }
+    KrToken(KrToken),
+    LParen, RParen,         // ( )
+    // LBracket, RBracket,  // [ ]
+    // LBrace, RBrace,      // { }
 }
 
 impl Token {
     pub fn as_string(&self) -> String {
-        let lparen = Text::from_str("(");
-        let rparen = Text::from_str(")");
-        let t = match self {
-            Token::Name(Name(text)) => text,
-            Token::Operator(Operator { text, .. }) => text,
-            Token::Number(Number(text)) => text,
-            Token::Quoted(Quoted(text)) => text,
-            Token::Symbol(Symbol(text)) => text,
-            Token::LParen => { &lparen },
-            Token::RParen => { &rparen },
-            // Token::LBracket => &vec![b'['],
-            // Token::RBracket => &vec![b']'],
-            // Token::LBrace => &vec![b'{'],
-            // Token::RBrace => &vec![b'}'],
-        };
-        t.to_string()
-    }
-    pub fn to_kr(&self) -> Kr {
         match self {
-            Token::Name(name) => name.parse(),
-            Token::Operator(op) => op.to_kr(),
-            Token::Number(num) => num.parse(),
-            Token::Quoted(s) => s.parse(),
-            Token::Symbol(s) => s.parse(),
-            _ => panic!("Failed to convert token to kr"),
+            Token::KrToken(t) => t.as_string(),
+            Token::LParen => { "(".to_string() },
+            Token::RParen => { ")".to_string() },
         }
     }
 }

@@ -1,8 +1,8 @@
-use crate::token::Token;
+use crate::token::{Token, KrToken};
 use crate::kr::Kr;
 
 // Returns index of first element of v that satisfies some condition, ignores first n characters
-// TODO: Get rid of this
+// TODO: Get rid of this?
 fn find_first_index<T, F>(v: &Vec<T>, cond: F, n: usize) -> usize
 where
     F: Fn(&T) -> bool,
@@ -26,11 +26,11 @@ pub fn parse(tokens:&Vec<Token>) -> Kr {
             Kr::NN(vec![parse(&tokens[1..n].to_vec()), parse(&tokens[n+1..].to_vec())])
         },
         Token::RParen => { Kr::Null },
-        _ => {
+        Token::KrToken(kr_token) => {
             match tokens.get(1) {
-                Some(Token::Operator(op)) => Kr::NN(vec![op.to_kr(), first_token.to_kr(), parse(&tokens[2..].to_vec())]),
-                Some(_token) => Kr::NN(vec![first_token.to_kr(), parse(&tokens[1..].to_vec())]),
-                None => first_token.to_kr(),
+                Some(Token::KrToken(KrToken::Operator(op))) => Kr::NN(vec![Kr::Op(op.parse()), kr_token.to_kr(), parse(&tokens[2..].to_vec())]),
+                Some(_token) => Kr::NN(vec![kr_token.to_kr(), parse(&tokens[1..].to_vec())]),
+                None => kr_token.to_kr(),
             }
         }
     }
