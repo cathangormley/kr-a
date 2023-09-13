@@ -6,9 +6,6 @@ impl Text {
     pub fn new(t: Vec<u8>) -> Self {
         Text(t)
     }
-    pub fn from_string(s: String) -> Self {
-        Self::new(s.as_bytes().to_vec())
-    }
 
     pub fn from_str(s: &str) -> Self {
         Self::new(s.as_bytes().to_vec())
