@@ -7,6 +7,7 @@ pub fn init() -> Env {
     let mut env: Env = Env::new();
     env.var.insert(Text::from_str("one"), Kr::J(1));
     env.var.insert(Text::from_str("two"), Kr::J(2));
+    env.var.insert(Text::from_str("alph"), Kr::C(b'a'));
     env
 }
 

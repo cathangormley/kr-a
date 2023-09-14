@@ -12,6 +12,7 @@ mod token;
 use crate::token::Token;
 mod lex;
 mod parse;
+mod error;
 
 
 fn read() -> String {
@@ -70,7 +71,11 @@ fn main() {
             let token_strings: Vec<String> = tokens.iter().map(|x| x.as_string()).collect();
             println!("{:?}", token_strings);
         };
-        let ast = parse::parse(&tokens);
+        let ast = match parse::parse(&tokens) {
+            Err(_) => continue,
+            Ok(ast) => ast,
+        };
+
         if debug { println!("{:?}", ast); };
 
         let result: Kr;

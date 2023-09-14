@@ -96,8 +96,6 @@ impl OperatorToken {
     }
 }
 
-// TODO: Split this into tokens that represent kr values and grammar helpers?
-
 // Tokens that represent some Kr data
 #[derive(Clone)]
 pub enum KrToken {
@@ -109,7 +107,7 @@ pub enum KrToken {
 }
 
 impl KrToken {
-    pub fn to_kr(&self) -> Kr {
+    pub fn parse(&self) -> Kr {
         match self {
             KrToken::Name(name) => Kr::NN(name.parse()),
             KrToken::Operator(op) => Kr::Op(op.parse()),
