@@ -1,6 +1,6 @@
 use crate::token::{Token, KrToken};
 use crate::kr::Kr;
-use crate::error::KrError;
+use crate::error::KrParseError;
 
 /*
 Grammar:
@@ -9,18 +9,17 @@ term => <KrToken> | <(> <expr> <)>
 
 */
 
-pub fn parse(tokens:&[Token]) -> Result<Kr, KrError> {
+pub fn parse(tokens:&[Token]) -> Result<Kr, KrParseError> {
     if tokens.len() == 0 { return Ok(Kr::Null) };
     let (res, n) = parse_expr(tokens, 0)?;
     if n == tokens.len() {
         Ok(res)
     } else {
-        Err(KrError::Parse)
+        Err(KrParseError::IncompleteParse)
     }
 }
 
-
-fn parse_expr(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrError> {
+fn parse_expr(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrParseError> {
     let (term, j) = parse_term(tokens, i)?;
     let t = tokens.get(j);
     match t {
@@ -35,8 +34,8 @@ fn parse_expr(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrError> {
 
 }
 
-fn parse_term(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrError> {
-    let t = tokens.get(i).ok_or(KrError::Parse)?;
+fn parse_term(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrParseError> {
+    let t = tokens.get(i).ok_or(KrParseError::UnexpectedEOF)?;
     let j = i + 1;
     match t {
         Token::KrToken(kr) => Ok((kr.parse(), j)),
@@ -45,9 +44,9 @@ fn parse_term(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrError> {
             if let Some(&Token::RParen) = tokens.get(k) {
                 Ok((kr, k+1))
             } else {
-                Err(KrError::Parse)
+                Err(KrParseError::MissingRParen)
             }
         }
-        Token::RParen => Err(KrError::Parse),
+        Token::RParen => Err(KrParseError::UnexpectedRParen),
     }
 }

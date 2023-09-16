@@ -2,7 +2,7 @@ use crate::text::Text;
 use crate::kr::Kr;
 use crate::operator::{Operator, Op};
 
-#[derive(Eq, Hash, PartialEq, Clone)]
+#[derive(Eq, Hash, PartialEq, Clone, Debug)]
 pub struct NameToken(Text);
 
 impl NameToken {
@@ -14,7 +14,7 @@ impl NameToken {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NumberToken(Text);
 
 // Digits possibly preceding a char: 123j
@@ -45,7 +45,7 @@ impl NumberToken {
 
 // A string surrounded by quotes: "example"
 // Text is the characters between the quotes
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct QuotedToken(Text);
 
 impl QuotedToken {
@@ -58,7 +58,7 @@ impl QuotedToken {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SymbolToken(Text);
 
 impl SymbolToken {
@@ -70,7 +70,7 @@ impl SymbolToken {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct OperatorToken {
     text: Text,
     op: Op
@@ -97,7 +97,7 @@ impl OperatorToken {
 }
 
 // Tokens that represent some Kr data
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum KrToken {
     Name(NameToken),
     Operator(OperatorToken),
@@ -131,7 +131,7 @@ impl KrToken {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Token {
     KrToken(KrToken),
     LParen, RParen,         // ( )

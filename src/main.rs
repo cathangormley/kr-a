@@ -5,6 +5,7 @@ mod kr;
 use kr::Kr;
 
 mod init;
+use crate::error::KrError;
 use crate::init::Env;
 
 mod text;
@@ -72,7 +73,10 @@ fn main() {
             println!("{:?}", token_strings);
         };
         let ast = match parse::parse(&tokens) {
-            Err(_) => continue,
+            Err(e) => {
+                KrError::Parse(e).print();
+                continue;
+            },
             Ok(ast) => ast,
         };
 
