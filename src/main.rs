@@ -14,6 +14,7 @@ use crate::token::Token;
 mod lex;
 mod parse;
 mod error;
+mod primitive;
 
 
 fn read() -> String {

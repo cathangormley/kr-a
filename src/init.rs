@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use crate::kr::Kr;
 
+use crate::primitive::{Primitive, Prim};
 use crate::text::Text;
 
 pub fn init() -> Env {
@@ -8,6 +9,9 @@ pub fn init() -> Env {
     env.var.insert(Text::from_str("one"), Kr::J(1));
     env.var.insert(Text::from_str("two"), Kr::J(2));
     env.var.insert(Text::from_str("alph"), Kr::C(b'a'));
+    env.var.insert(Text::from_str("first"), Kr::Prim(Primitive::new(Prim::First)));
+    env.var.insert(Text::from_str("last"), Kr::Prim(Primitive::new(Prim::Last)));
+
     env
 }
 
