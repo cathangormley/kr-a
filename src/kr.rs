@@ -28,6 +28,10 @@ impl Kr {
             Kr::C(c) => "\"".to_string() + &c.to_string().to_owned() + "\"",
             Kr::S(sym) => { "`".to_string() + &sym.to_string()},
             Kr::Null => "(::)".to_string(),
+            Kr::Iv(iv) => vec_to_string(iv, "; "),
+            Kr::Jv(jv) => vec_to_string(jv, "; "),
+            Kr::Ev(ev) => vec_to_string(ev, "; "),
+            Kr::Fv(fv) => vec_to_string(fv, "; "),
             Kr::Cv(cv) => {"\"".to_owned() + &String::from_utf8(cv.to_vec()).unwrap() + "\""},
             Kr::Op(op) => op.to_string(),
             Kr::NN(kl) => {
@@ -63,4 +67,11 @@ impl Kr {
             x => (env, x.clone())
         }
     }
+}
+
+fn vec_to_string<T>(v: &Vec<T>, delim: &str) -> String 
+where T:ToString
+{
+    let x: Vec<String> = v.iter().map(|x| x.to_string()).collect();
+    format!("[{}]", x.join(delim))
 }
