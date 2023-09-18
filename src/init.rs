@@ -11,7 +11,7 @@ pub fn init() -> Env {
     env.var.insert(Text::from_str("alph"), Kr::C(b'a'));
     env.var.insert(Text::from_str("first"), Kr::Prim(Primitive::new(Prim::First)));
     env.var.insert(Text::from_str("last"), Kr::Prim(Primitive::new(Prim::Last)));
-
+    env.var.insert(Text::from_str("til"), Kr::Prim(Primitive::new(Prim::Til)));
     env
 }
 

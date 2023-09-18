@@ -10,6 +10,7 @@ List of built in primitive functions
 pub enum Prim {
     First,
     Last,
+    Til,
 }
 
 #[derive(Clone, Debug)]
@@ -25,6 +26,7 @@ impl Primitive {
     let (f, t): (fn(Env, Vec<Kr>) -> (Env, Kr), &str) = match prim {
         Prim::First => { (kr_first_wrapped, "first") },
         Prim::Last => { (kr_last_wrapped, "last") },
+        Prim::Til => { (kr_til_wrapped, "til") }
     };
     Primitive { prim, f, text: Text::from_str(t) }
     }
@@ -73,5 +75,17 @@ fn kr_last(x: &Kr) -> Kr {
         Kr::Fv(list) => Kr::F(last!(list, 0f64)),
         Kr::Cv(list) => Kr::C(last!(list, b' ')),
         x => x.clone(),
+    }
+}
+
+fn kr_til_wrapped(e:Env, args: Vec<Kr>) -> (Env, Kr) {
+    if args.len() > 1 { return (e, Kr::Null) };
+    (e, kr_til(&args[0]))
+}
+
+fn kr_til(x: &Kr) -> Kr {
+    match x {
+        Kr::J(n) => Kr::Jv((0..*n).collect()),
+        x => x.clone()
     }
 }
