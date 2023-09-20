@@ -12,10 +12,8 @@ expr := <term> <op> <expr>
       | <term>
 term := <kr>
       | <(> <expr> <)> 
-      | <[> <expr> {<;> <expr> } <]>            // nyi
+      | <[> <expr> {<;> <expr> } <]>
 */
-
-
 
 
 pub fn parse(tokens:&[Token]) -> Result<Kr, KrParseError> {
@@ -68,9 +66,7 @@ fn parse_term(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrParseError> {
             let mut elements: Vec<Kr> = vec![Kr::Prim(Primitive::new(Prim::Enlist))];
             let mut j = i + 1;
             loop {
-                println!("j is {}", j);
                 let (expr, k) = parse_expr(tokens, j)?;
-                println!("{:?}, k is {}", expr, k);
                 elements.push(expr);
                 if let Some(Token::SemiColon) = tokens.get(k) {
                     j = k + 1;
@@ -81,7 +77,6 @@ fn parse_term(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrParseError> {
                 }
             }
             if let Some(&Token::RBracket) = tokens.get(j) {
-                println!("complete at j = {}", j);
                 Ok((Kr::NN(elements), j+1))
             } else {
                 Err(KrParseError::MissingRBracket)
@@ -92,8 +87,3 @@ fn parse_term(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrParseError> {
         Token::SemiColon => Err(KrParseError::UnexpectedSemiColon),
     }
 }
-
-
-
-// [ 7 ; 8 ; 9 ]
-
