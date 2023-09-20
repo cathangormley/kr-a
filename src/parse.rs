@@ -49,7 +49,6 @@ fn parse_expr(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrParseError> {
 }
 
 fn parse_term(tokens:&[Token], i: usize) -> Result<(Kr, usize), KrParseError> {
-    println!("parsing term at {}", i);
     let t = tokens.get(i).ok_or(KrParseError::UnexpectedEOF)?;
     match t {
         Token::KrToken(kr) => Ok((kr.parse(), i+1)),
