@@ -59,6 +59,18 @@ pub fn lex(input: &String) -> Vec<Token> {
                 j = i + 1;
                 tok = Token::RParen;
             },
+            b'[' => {
+                j = i + 1;
+                tok = Token::LBracket;
+            },
+            b']' => {
+                j = i + 1;
+                tok = Token::RBracket;
+            },
+            b';' => {
+                j = i + 1;
+                tok = Token::SemiColon;
+            },
             _ => {
                 // Other - ignore
                 j = i + 1;

@@ -7,24 +7,35 @@ pub enum KrParseError {
     UnexpectedRParen,
     UnexpectedEOF,
     MissingRParen,
-    IncompleteParse
+    IncompleteParse,
+    UnexpectedRBracket,
+    MissingRBracket,
+    UnexpectedSemiColon,
 }
 
 impl DisplayError for KrParseError {
     fn msg(&self) -> &str {
+        use KrParseError as E;
         match self {
-            KrParseError::IncompleteParse => "finished parse unexpectedly",
-            KrParseError::MissingRParen => "missing )",
-            KrParseError::UnexpectedEOF => "unexpected eof",
-            KrParseError::UnexpectedRParen => "unexpected )",
+            E::IncompleteParse => "finished parse unexpectedly",
+            E::MissingRParen => "missing )",
+            E::UnexpectedEOF => "unexpected eof",
+            E::UnexpectedRParen => "unexpected )",
+            E::UnexpectedRBracket => "unexpected ]",
+            E::MissingRBracket => "missing ]",
+            E::UnexpectedSemiColon => "unexpected ;",
         }
     }
     fn code(&self) -> usize {
+        use KrParseError as E;
         match self {
-            KrParseError::IncompleteParse => 101,
-            KrParseError::MissingRParen => 102,
-            KrParseError::UnexpectedEOF => 103,
-            KrParseError::UnexpectedRParen => 104,   
+            E::IncompleteParse => 101,
+            E::MissingRParen => 102,
+            E::UnexpectedEOF => 103,
+            E::UnexpectedRParen => 104,
+            E::UnexpectedRBracket => 105,
+            E::MissingRBracket => 106,
+            E::UnexpectedSemiColon => 107,
         }
     }
 }

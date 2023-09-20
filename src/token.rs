@@ -135,8 +135,9 @@ impl KrToken {
 pub enum Token {
     KrToken(KrToken),
     LParen, RParen,         // ( )
-    // LBracket, RBracket,  // [ ]
+    LBracket, RBracket,     // [ ]
     // LBrace, RBrace,      // { }
+    SemiColon,
 }
 
 impl Token {
@@ -145,6 +146,9 @@ impl Token {
             Token::KrToken(t) => t.as_string(),
             Token::LParen => { "(".to_string() },
             Token::RParen => { ")".to_string() },
+            Token::LBracket => { "[".to_string() },
+            Token::RBracket => { "]".to_string() },
+            Token::SemiColon => { ";".to_string() },
         }
     }
 }
