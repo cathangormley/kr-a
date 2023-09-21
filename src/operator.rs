@@ -16,7 +16,6 @@ pub enum Op {
 
 #[derive(Clone, Debug)]
 pub struct Operator {
-    pub op: Op,
     pub dyadic: fn(Env, &[Kr]) -> (Env, Kr),
     pub text: Text,
 }
@@ -31,7 +30,7 @@ impl Operator {
             Op::Assign => { (kr_assign, ":") },
             Op::Join => { (kr_join, ",") },
         };
-        Operator { op, dyadic: f, text: Text::from_str(t) }
+        Operator { dyadic: f, text: Text::from_str(t) }
     }
 
     pub fn to_string(&self) -> String {

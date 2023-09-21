@@ -28,25 +28,24 @@ impl Kr {
             Kr::C(c) => "\"".to_string() + &c.to_string().to_owned() + "\"",
             Kr::S(sym) => { "`".to_string() + &sym.to_string()},
             Kr::Null => "(::)".to_string(),
-            Kr::Iv(iv) => vec_to_string(iv, "; "),
-            Kr::Jv(jv) => vec_to_string(jv, "; "),
-            Kr::Ev(ev) => vec_to_string(ev, "; "),
-            Kr::Fv(fv) => vec_to_string(fv, "; "),
+            Kr::Iv(iv) => vec_to_string(iv, " ", "", ""),
+            Kr::Jv(jv) => vec_to_string(jv, " ", "", ""),
+            Kr::Ev(ev) => vec_to_string(ev, " ", "", ""),
+            Kr::Fv(fv) => vec_to_string(fv, " ", "", ""),
             Kr::Cv(cv) => {"\"".to_owned() + &String::from_utf8(cv.to_vec()).unwrap() + "\""},
             Kr::Op(op) => op.to_string(),
+            Kr::Prim(prim) => prim.display(),
             Kr::NN(kl) => { // vec_to_string(kl, "\n ")
                 let mut output = String::new();
                 output.push('[');
                 for k in kl {
                     output.push_str(&k.print());
-                    output.push_str("; ");
+                    output.push_str(";");
                 }
-                output.pop();
                 output.pop();
                 output.push(']');
                 output
             }
-            _ => "Cannot display".to_owned()
         }
     }
 }
@@ -69,9 +68,9 @@ impl Kr {
     }
 }
 
-fn vec_to_string<T>(v: &Vec<T>, delim: &str) -> String 
+fn vec_to_string<T>(v: &Vec<T>, delim: &str, start: &str, end: &str) -> String 
 where T:ToString
 {
     let x: Vec<String> = v.iter().map(|x| x.to_string()).collect();
-    format!("[{}]", x.join(delim))
+    format!("{}{}{}", start, x.join(delim), end)
 }

@@ -16,7 +16,6 @@ pub enum Prim {
 
 #[derive(Clone, Debug)]
 pub struct Primitive {
-    prim: Prim,
     f: fn(Env, &[Kr]) -> (Env, Kr),
     text: Text,
 }
@@ -29,14 +28,21 @@ impl Primitive {
             Prim::Til => { (kr_til_wrapped, "til") },
             Prim::Enlist => { (kr_enlist_wrapped, "enlist") },
         };
-        Primitive { prim, f, text: Text::from_str(t) }
+        Primitive { f, text: Text::from_str(t) }
     }
-
     pub fn apply(&self, e: Env, args:&[Kr]) -> (Env, Kr) {
         (self.f)(e, args)
     }
+    pub fn display(&self) -> String {
+        self.to_string()
+    }
 }
 
+impl ToString for Primitive {
+    fn to_string(&self) -> String { 
+        self.text.to_string()
+    }
+}
 
 macro_rules! first {
     ($list:expr, $default:expr) => { $list.first().copied().unwrap_or($default) };
