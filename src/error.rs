@@ -1,6 +1,7 @@
 
 pub enum KrError {
     Parse(KrParseError),
+    Eval(KrEvalError),
 }
 
 pub enum KrParseError {
@@ -40,6 +41,40 @@ impl DisplayError for KrParseError {
     }
 }
 
+pub enum KrEvalError {
+    Type,
+    NotAVerb,
+    Rank,
+    Length,
+    Assign,
+    NotDefined,
+}
+
+impl DisplayError for KrEvalError {
+    fn msg(&self) -> &str {
+        use KrEvalError as E;
+        match self {
+            E::Type => "type",
+            E::NotAVerb => "not a verb",
+            E::Rank => "rank",
+            E::Length => "length",
+            E::Assign => "assign",
+            E::NotDefined => "not defined",
+        }
+    }
+    fn code(&self) -> usize {
+        use KrEvalError as E;
+        match self {
+            E::Type => 201,
+            E::NotAVerb => 202,
+            E::Rank => 203,
+            E::Length => 204,
+            E::Assign => 205,
+            E::NotDefined => 206,
+        }
+    }
+}
+
 trait DisplayError {
     fn msg(&self) -> &str;
     fn code(&self) -> usize;
@@ -53,6 +88,7 @@ impl KrError {
     pub fn print(&self) {
         match self {
             KrError::Parse(e) => println!("{}", e.display()),
+            KrError::Eval(e) => println!("{}", e.display()),
         }
     }
 }

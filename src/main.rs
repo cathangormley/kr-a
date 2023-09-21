@@ -2,6 +2,7 @@ use std::io::{self, Write};
 mod operator;
 
 mod kr;
+use error::KrEvalError;
 use kr::Kr;
 
 mod init;
@@ -25,14 +26,14 @@ fn read() -> String {
     input
 }
 
-fn eval(env: Env, ast: &Kr) -> (Env, Kr) {
+fn eval(env: Env, ast: &Kr) -> (Env, Result<Kr, KrEvalError>) {
     // Recursively evaluate ast
     // A list of the form [(::); `name] means the value assigned to that name
     match ast {
         Kr::NN(t) => {
             match t.len() {
-                0 => (env, Kr::Null),
-                1 => (env, t[0].clone()),
+                0 => (env, Ok(Kr::Null)),
+                1 => (env, Ok(t[0].clone())),
                 _ => {
                     // Initialize a vector to store the results
                     let mut results: Vec<Kr> = Vec::new();
@@ -40,17 +41,21 @@ fn eval(env: Env, ast: &Kr) -> (Env, Kr) {
                     // Iterate through the elements of t, starting from the second element (index 1)
                     for i in 0..t.len() {
                         let (new_env, kr) = eval(e, &t[i]);
+                        let kr = match kr {
+                            Ok(x) => x,
+                            Err(err) => return (new_env, Err(err)),
+                        };
                         // Append the result to the results vector
                         results.push(kr);
                         // Update the environment for the next iteration
                         e = new_env;
                     }
-                    let (first, rest) = results.split_first().unwrap();
+                    let (first, rest) = results.split_first().expect("results should not be empty");
                     first.apply(e, rest)                   
                 }
             }
         }
-        other => (env, other.clone()),
+        other => (env, Ok(other.clone())),
     }
 }
 
@@ -81,10 +86,17 @@ fn main() {
             Ok(ast) => ast,
         };
 
-        if debug { println!("{:?}", ast); };
+        if debug { println!("{}",ast.print()); };
 
-        let result: Kr;
+        let result: Result<Kr, KrEvalError>;
         (env, result) = eval(env, &ast);
+        let result = match result {
+            Err(e) => {
+                KrError::Eval(e).print();
+                continue;
+            },
+            Ok(res) => res,
+        };
         if debug { println!("{:?}", result); };
 
         print(&result);

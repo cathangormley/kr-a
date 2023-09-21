@@ -1,3 +1,4 @@
+use crate::error::KrEvalError;
 use crate::operator::Operator;
 use crate::text::Text;
 use crate::init::Env;
@@ -51,19 +52,11 @@ impl Kr {
 }
 
 impl Kr {
-    pub fn apply(&self, env: Env, args: &[Kr]) -> (Env, Kr) {
+    pub fn apply(&self, env: Env, args: &[Kr]) -> (Env, Result<Kr, KrEvalError>) {
         match self {
-            Kr::Op(op) => (op.dyadic)(env, args),
+            Kr::Op(op) => op.apply(env, args),
             Kr::Prim(prim) => prim.apply(env, args),
-            Kr::Null => {
-                if let Some(Kr::S(s)) = args.first() {
-                    let v = env.val(&Kr::S(s.clone()));
-                    (env, v)
-                } else {
-                    (env, Kr::Null)
-                }
-            }
-            x => (env, x.clone())
+            _ => (env, Err(KrEvalError::NotAVerb)),
         }
     }
 }

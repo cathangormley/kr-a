@@ -1,3 +1,4 @@
+use crate::primitive::{Primitive, Prim};
 use crate::text::Text;
 use crate::kr::Kr;
 use crate::operator::{Operator, Op};
@@ -10,7 +11,7 @@ impl NameToken {
         NameToken(text)
     }
     fn parse(&self) -> Vec<Kr> {
-        vec![Kr::Null, Kr::S(self.0.clone())]
+        vec![Kr::Prim(Primitive::new(Prim::Value)), Kr::S(self.0.clone())]
     }
 }
 

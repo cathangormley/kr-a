@@ -1,17 +1,44 @@
 use std::collections::HashMap;
+use crate::error::KrEvalError;
 use crate::kr::Kr;
 
+use crate::operator::{Operator, Op};
 use crate::primitive::{Primitive, Prim};
 use crate::text::Text;
+
+macro_rules! insert_operator {
+    ($env:expr, $($text:expr => $op:expr),*) => {
+        $($env.var.insert(Text::from_str($text), Kr::Op(Operator::new($op)));)*
+    };
+}
+
+macro_rules! insert_primitive {
+    ($env:expr, $($text:expr => $prim:expr),*) => {
+        $($env.var.insert(Text::from_str($text), Kr::Prim(Primitive::new($prim)));)*
+    };
+}
 
 pub fn init() -> Env {
     let mut env: Env = Env::new();
     env.var.insert(Text::from_str("one"), Kr::J(1));
     env.var.insert(Text::from_str("two"), Kr::J(2));
     env.var.insert(Text::from_str("alph"), Kr::C(b'a'));
-    env.var.insert(Text::from_str("first"), Kr::Prim(Primitive::new(Prim::First)));
-    env.var.insert(Text::from_str("last"), Kr::Prim(Primitive::new(Prim::Last)));
-    env.var.insert(Text::from_str("til"), Kr::Prim(Primitive::new(Prim::Til)));
+    insert_primitive!(
+        env,
+        "first" => Prim::First,
+        "last" => Prim::Last,
+        "til" => Prim::Til,
+        "value" => Prim::Value
+    );
+    insert_operator!(
+        env,
+        "+" => Op::Addition,
+        "-" => Op::Subtraction,
+        "*" => Op::Multiplication,
+        "%" => Op::Division,
+        ":" => Op::Assign,
+        "," => Op::Join
+    );
     env
 }
 
@@ -28,15 +55,12 @@ impl Env {
         let opts: Vec<String> = std::env::args().collect();
         Env { var: HashMap::new(), opts }
     }
-    pub fn val(&self, x: &Kr) -> Kr {
-        match x {
+    pub fn val(&self, v: &Kr) -> Result<Kr, KrEvalError> {
+        match v {
             Kr::S(s) => {
-                match self.var.get(s) {
-                    Some(kr) => kr.clone(),
-                    None => Kr::Null,
-                }
+                self.var.get(s).ok_or(KrEvalError::NotDefined).cloned()
             },
-            _ => x.clone(),
+            _ => Err(KrEvalError::Type),
         }
     }
 }
