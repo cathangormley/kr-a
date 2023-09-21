@@ -17,13 +17,13 @@ pub enum Op {
 #[derive(Clone, Debug)]
 pub struct Operator {
     pub op: Op,
-    pub dyadic: fn(Env, Vec<Kr>) -> (Env, Kr),
+    pub dyadic: fn(Env, &[Kr]) -> (Env, Kr),
     pub text: Text,
 }
 
 impl Operator {
     pub fn new(op: Op) -> Self {
-        let (f, t): (fn(Env, Vec<Kr>) -> (Env, Kr), &str) = match op {
+        let (f, t): (fn(Env, &[Kr]) -> (Env, Kr), &str) = match op {
             Op::Addition => { (kr_addition, "+") },
             Op::Subtraction => { (kr_subtraction, "-") },
             Op::Multiplication => { (kr_multiplication, "*") },
@@ -44,13 +44,13 @@ impl Operator {
 // Maybe I should use a macro..
 /*
 // Define a type alias for the dyadic function's return type
-type DyadicFn = dyn Fn(Env, Vec<Kr>) -> (Env, Kr);
+type DyadicFn = dyn Fn(Env, &[Kr]) -> (Env, Kr);
 
 fn dyadic<F, T>(f: F) -> Box<DyadicFn>
 where
     F: Fn(Kr, Kr) -> Kr + 'static,
 {
-    let f = move |e: Env, args: Vec<Kr>| {
+    let f = move |e: Env, args: &[Kr]| {
         if args.len() != 2 { return (e, Kr::Null) };
         let x = e.val(&args[0]);
         let y = e.val(&args[1]);
@@ -60,7 +60,7 @@ where
 }
 */
 
-pub fn kr_addition(e: Env, args: Vec<Kr>) -> (Env, Kr) {
+pub fn kr_addition(e: Env, args: &[Kr]) -> (Env, Kr) {
     if args.len() != 2 {return (e, Kr::Null) };
     let x = e.val(&args[0]);
     let y = e.val(&args[1]);
@@ -75,7 +75,7 @@ pub fn kr_addition(e: Env, args: Vec<Kr>) -> (Env, Kr) {
     (e, res)
 }
 
-pub fn kr_subtraction(e: Env, args: Vec<Kr>) -> (Env, Kr) {
+pub fn kr_subtraction(e: Env, args: &[Kr]) -> (Env, Kr) {
     if args.len() != 2 { return (e, Kr::Null) };
     let x = e.val(&args[0]);
     let y = e.val(&args[1]);
@@ -90,7 +90,7 @@ pub fn kr_subtraction(e: Env, args: Vec<Kr>) -> (Env, Kr) {
     (e, res)
 }
 
-pub fn kr_multiplication(e: Env, args: Vec<Kr>) -> (Env, Kr) {
+pub fn kr_multiplication(e: Env, args: &[Kr]) -> (Env, Kr) {
     if args.len() != 2 { return (e, Kr::Null) };
     let x = e.val(&args[0]);
     let y = e.val(&args[1]);
@@ -105,7 +105,7 @@ pub fn kr_multiplication(e: Env, args: Vec<Kr>) -> (Env, Kr) {
     (e, res)
 }
 
-pub fn kr_division(e: Env, args: Vec<Kr>) -> (Env, Kr) {
+pub fn kr_division(e: Env, args: &[Kr]) -> (Env, Kr) {
     if args.len() != 2 { return (e, Kr::Null) };
     let x = e.val(&args[0]);
     let y = e.val(&args[1]);
@@ -120,7 +120,7 @@ pub fn kr_division(e: Env, args: Vec<Kr>) -> (Env, Kr) {
     (e, res)
 }
 
-pub fn kr_join(e: Env, args: Vec<Kr>) -> (Env, Kr) {
+pub fn kr_join(e: Env, args: &[Kr]) -> (Env, Kr) {
     if args.len() != 2 { return (e, Kr::Null) };
     let x = e.val(&args[0]);
     let y = e.val(&args[1]);
@@ -142,7 +142,7 @@ pub fn kr_join(e: Env, args: Vec<Kr>) -> (Env, Kr) {
     (e, res)
 }
 
-pub fn kr_assign(mut e: Env, args: Vec<Kr>) -> (Env, Kr) {
+pub fn kr_assign(mut e: Env, args: &[Kr]) -> (Env, Kr) {
     if args.len() != 2 { return (e, Kr::Null) };
     let y = e.val(&args[1]);
     match (&args[0],y) {

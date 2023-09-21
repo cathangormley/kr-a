@@ -34,7 +34,7 @@ impl Kr {
             Kr::Fv(fv) => vec_to_string(fv, "; "),
             Kr::Cv(cv) => {"\"".to_owned() + &String::from_utf8(cv.to_vec()).unwrap() + "\""},
             Kr::Op(op) => op.to_string(),
-            Kr::NN(kl) => {
+            Kr::NN(kl) => { // vec_to_string(kl, "\n ")
                 let mut output = String::new();
                 output.push('[');
                 for k in kl {
@@ -52,7 +52,7 @@ impl Kr {
 }
 
 impl Kr {
-    pub fn apply(&self, env: Env, args: Vec<Kr>) -> (Env, Kr) {
+    pub fn apply(&self, env: Env, args: &[Kr]) -> (Env, Kr) {
         match self {
             Kr::Op(op) => (op.dyadic)(env, args),
             Kr::Prim(prim) => prim.apply(env, args),

@@ -25,7 +25,7 @@ fn read() -> String {
     input
 }
 
-fn eval(mut env: Env, ast: Kr) -> (Env, Kr) {
+fn eval(env: Env, ast: &Kr) -> (Env, Kr) {
     // Recursively evaluate ast
     // A list of the form [(::); `name] means the value assigned to that name
     match ast {
@@ -36,21 +36,21 @@ fn eval(mut env: Env, ast: Kr) -> (Env, Kr) {
                 _ => {
                     // Initialize a vector to store the results
                     let mut results: Vec<Kr> = Vec::new();
- 
+                    let mut e: Env = env;
                     // Iterate through the elements of t, starting from the second element (index 1)
                     for i in 0..t.len() {
-                        let (new_env, result) = eval(env, t[i].clone());
+                        let (new_env, kr) = eval(e, &t[i]);
                         // Append the result to the results vector
-                        results.push(result);
+                        results.push(kr);
                         // Update the environment for the next iteration
-                        env = new_env;
+                        e = new_env;
                     }
                     let (first, rest) = results.split_first().unwrap();
-                    first.apply(env, Vec::from(rest))                   
+                    first.apply(e, rest)                   
                 }
             }
         }
-        other => (env, other),
+        other => (env, other.clone()),
     }
 }
 
@@ -84,7 +84,7 @@ fn main() {
         if debug { println!("{:?}", ast); };
 
         let result: Kr;
-        (env, result) = eval(env, ast);
+        (env, result) = eval(env, &ast);
         if debug { println!("{:?}", result); };
 
         print(&result);
